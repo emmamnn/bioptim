@@ -30,7 +30,7 @@ from bioptim import (
 
 
 def prepare_ocp(
-    biorbd_model_path: str = "./models/cube_with_forces.bioMod",
+    biorbd_model_path: str = "models/cube_with_forces.bioMod",
     ode_solver: OdeSolverBase = OdeSolver.RK4(),
     expand_dynamics: bool = True,
     phase_dynamics: PhaseDynamics = PhaseDynamics.ONE_PER_NODE,
@@ -202,10 +202,8 @@ def main():
     # --- Solve the program --- #
     sol = ocp.solve(Solver.IPOPT(show_online_optim=platform.system() == "Linux"))
 
-
     # --- Show results --- #
-    #sol.graphs()
-    sol.animate(n_frames=100)
+    sol.graphs()
 
 
 if __name__ == "__main__":
