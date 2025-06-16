@@ -1,0 +1,71 @@
+#
+# This file is used by biomake to generate the bioMod from measurements.
+#
+Human:
+  fused: True
+
+Pelvis:
+  label: ThePelvis
+  translations: xyz
+  rotations: xyz
+  meshfile: Model_mesh/pelvis.stl
+  meshrt: [-.175, 0, 0]
+  meshxyz: [0, 0, 0]
+
+Thorax:
+  meshfile: Model_mesh/thorax.stl
+  meshrt: [-.15, 0, 0]
+  meshxyz: [0, -.025, 0]
+
+Head:
+  meshfile: Model_mesh/tete.stl
+
+UpperArms:
+  rotations: zy
+  rangesQ: [[-2.15, .5], [-.05, 3]]
+
+
+Forearms:
+  rotations: zy
+  rangesQ: [[-2.8, .3], [0., 2.65]]
+
+
+Hands:
+  markers:
+    MidRightHand:
+      position: [0, 0, -.1]
+
+
+LeftThigh:
+  rotations: xy
+  rangesQ: [[-.3, 2.7], [-.35, .35]]
+  meshfile: Model_mesh/thigh.stl
+
+LeftShank:
+  meshfile: Model_mesh/leg_left.stl
+  meshxyz: [0, 0, 0]
+  markers:
+    TargetRightHand:
+      position: [.1, 0, .22]
+    TargetLeftHand:
+      position: [-.1, 0, .22]
+
+LeftFoot:
+  meshfile: Model_mesh/foot.stl
+
+RightThigh:
+  rotations: xy
+  rangesQ: [[-.3, 2.7], [-.35, .35]]
+  meshfile: Model_mesh/thigh.stl
+
+RightShank:
+  meshfile: Model_mesh/leg_right.stl
+  meshxyz: [0, 0, 0]
+  markers:
+    TargetRightHand:
+      position: [.1, 0, .22]
+    TargetLeftHand:
+      position: [-.1, 0, .22]
+
+RightFoot:
+  meshfile: Model_mesh/foot.stl
