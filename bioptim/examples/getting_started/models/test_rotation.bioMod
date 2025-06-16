@@ -1,8 +1,25 @@
 version 4
+segment Barre 
+	rt 0 0 0 xyz 0 0 0 //position de la barre 
+endsegment 
+
 
 segment RightHand
-	rt 0.0 0.0 0.3 xyz 0.0 0.0 0.0
+	parent Barre 
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.1 //position par rapport au parent 
+endsegment
+
+segment RightHandRotationX
+	parent RightHand
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.1 
 	rotations x
+	rangesQ
+		-4*pi 4*pi  	
+endsegment
+
+segment RightHandTranslation
+	parent RightHandRotationX 
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.1 //position par rapport au parent 
 	com 0.0 0.0 0.27803474807207669
 	mass 0.5227828447264804
 	inertia
@@ -14,7 +31,20 @@ segment RightHand
 endsegment
 
 segment RightForearm
-	parent RightHand
+	parent RightHandTranslation
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.241
+endsegment
+
+segment RightForearmRotationX
+	parent RightForearm
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.241
+	rotations x
+	rangesQ 
+		-pi/2 pi/2
+endsegment
+
+segment RightForearmTranslation
+	parent RightForearmRotationX
 	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.241
 	com 0.0 0.0 0.10573617954732842
 	mass 1.0135300071268463
@@ -26,3 +56,29 @@ segment RightForearm
 	meshscale 0.8435211983870453 0.8435211983870453 0.9717741935483871
 endsegment
 
+
+segment RightUpperArm
+	parent RightForearmTranslation
+	rt 0 0.0 0.0 xyz 0.0 0.0 0.275	
+endsegment
+
+segment RightUpperArmRotationX
+	parent RightUpperArm
+	rt 0 0.0 0.0 xyz 0.0 0.0 -0.275
+	rotations x
+	rangesQ 
+		-pi/2 pi/2
+endsegment
+
+segment RightUpperArmTranslation 
+	parent RightUpperArmRotationX
+	rt 0 0.0 0.0 xyz 0.0 0.0 0.275
+	com 0.0 0.0 -0.12881795959764886
+	mass 1.936962653717144
+	inertia
+		0.012327356544448364 0.0 0.0
+		0.0 0.012327356544448364 0.0
+		0.0 0.0 0.002216791961909835
+	meshfile Model_mesh/bras.stl
+	meshscale 0.8942210720111644 0.8942210720111644 1.0576923076923077
+endsegment
