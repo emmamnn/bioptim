@@ -1,0 +1,202 @@
+version 4
+
+root_actuated 0
+external_forces 0
+
+segment ThePelvis
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.0
+	translations xyz
+	rotations xyz
+	com 0.0 0.0 0.0
+	mass 9.89421385998868
+	inertia
+		0.05848712898828999 0.0 0.0
+		0.0 0.08089906353329981 0.0
+		0.0 0.0 0.0824214500611078
+	meshfile Model_mesh/pelvis.stl
+	meshrt -.175 0 0 xyz 0 0 0
+endsegment
+
+segment Thorax
+	parent ThePelvis
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.09903629669326643
+	com 0.0 0.0 0.14505050336910447
+	mass 14.644527756589252
+	inertia
+		0.16422482445514716 0.0 0.0
+		0.0 0.1845539159179389 0.0
+		0.0 0.0 0.12267663133066603
+	meshfile Model_mesh/thorax.stl
+	meshrt -.15 0 0 xyz 0 -.025 0
+endsegment
+
+segment Head
+	parent Thorax
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.321
+	com 0.0 0.0 0.14410504323581402
+	mass 4.790166218018207
+	inertia
+		0.033529266486764325 0.0 0.0
+		0.0 0.033529266486764325 0.0
+		0.0 0.0 0.012779140226203023
+	meshfile Model_mesh/tete.stl
+endsegment
+
+segment UpperArms
+	parent Thorax
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.193
+	rotations zy
+	rangesQ
+		-2.15 0.5
+		-.05 3
+	com 0.0 0.0 0.35560097721502265
+	mass 3.053884275655435
+	inertia
+		0.017731207652583694 0.0 0.0
+		0.0 0.0758893797981658 0.0
+		0.0 0.0 0.06091595377637793
+	mesh 0 0 0
+endsegment
+
+marker UpperArmsCOM
+	parent UpperArms
+	rt 0 0 0 xyz 0 0 0
+endmarker
+
+segment Forearms
+	parent UpperArms
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.21949999999999997
+	rotations zy
+	rangesQ
+		-2.8 0.3
+		0.0 2.65
+	com 0.0 0.0 -0.11719050711589621
+	mass 1.618120226980928
+	inertia
+		0.008730505622941635 0.0 0.0
+		0.0 0.039545987225566424 0.0
+		0.0 0.0 0.03168842470089177
+	mesh 0 0 0
+endsegment
+
+marker ForearmsCOM
+	parent Forearms
+	rt 0 0 0 xyz 0 0 0
+endmarker
+
+segment Hands
+	parent Forearms
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.22749999999999998
+	com -2.900230926866218e-18 0.0 -0.06295280579284158
+	mass 0.5981328796639049
+	inertia
+		0.0009022465368776878 0.0 0.0
+		0.0 0.012402784480396958 0.0
+		0.0 0.0 0.011624175734125972
+	mesh 0 0 0
+endsegment
+
+	marker HandsCOM
+		parent Hands
+		position 0 0 0
+	endmarker
+
+segment RightThigh
+	parent ThePelvis
+	rt 0.0 0.0 0.0 xyz -0.07850000000000001 0.0 -0.09396370330673358
+	rotations xy
+	rangesQ
+		-.3 2.7
+		-.35 0.35
+	com 0.0 0.0 -0.17423008338339324
+	mass 8.750468855947314
+	inertia
+		0.12308151205164959 0.0 0.0
+		0.0 0.12308151205164959 0.0
+		0.0 0.0 0.03174708475559291
+	meshfile Model_mesh/thigh.stl
+endsegment
+
+segment RightShank
+	parent RightThigh
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.387
+	com 0.0 0.0 -0.16906452193276242
+	mass 3.235027750425491
+	inertia
+		0.041541588346640027 0.0 0.0
+		0.0 0.041541588346640027 0.0
+		0.0 0.0 0.004620921782760292
+	meshfile Model_mesh/leg_right.stl
+endsegment
+
+	marker TargetRightHand
+		parent RightShank
+		position 0.1 0 0.22
+	endmarker
+
+	marker TargetLeftHand
+		parent RightShank
+		position -.1 0 0.22
+	endmarker
+
+segment RightFoot
+	parent RightShank
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
+	com 0.0 0.0 -0.06776112120416113
+	mass 0.6906250348530587
+	inertia
+		0.0015466483069131232 8.256759586238227e-21 0.0
+		8.256759586238227e-21 0.0014486158659897128 0.0
+		0.0 0.0 0.0004953579319371067
+	meshfile Model_mesh/foot.stl
+endsegment
+
+segment LeftThigh
+	parent ThePelvis
+	rt 0.0 0.0 0.0 xyz 0.07850000000000001 0.0 -0.09396370330673358
+	rotations xy
+	rangesQ
+		-.3 2.7
+		-.35 0.35
+	com 0.0 0.0 -0.17423008338339324
+	mass 8.750468855947314
+	inertia
+		0.12308151205164959 0.0 0.0
+		0.0 0.12308151205164959 0.0
+		0.0 0.0 0.03174708475559291
+	meshfile Model_mesh/thigh.stl
+endsegment
+
+segment LeftShank
+	parent LeftThigh
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.387
+	com 0.0 0.0 -0.16906452193276242
+	mass 3.235027750425491
+	inertia
+		0.041541588346640027 0.0 0.0
+		0.0 0.041541588346640027 0.0
+		0.0 0.0 0.004620921782760292
+	meshfile Model_mesh/leg_left.stl
+endsegment
+
+	marker TargetRightHand
+		parent LeftShank
+		position 0.1 0 0.22
+	endmarker
+
+	marker TargetLeftHand
+		parent LeftShank
+		position -.1 0 0.22
+	endmarker
+
+segment LeftFoot
+	parent LeftShank
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
+	com 0.0 0.0 -0.06776112120416113
+	mass 0.6906250348530587
+	inertia
+		0.0015466483069131232 8.256759586238227e-21 0.0
+		8.256759586238227e-21 0.0014486158659897128 0.0
+		0.0 0.0 0.0004953579319371067
+	meshfile Model_mesh/foot.stl
+endsegment

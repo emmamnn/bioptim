@@ -1064,7 +1064,7 @@ class UpperArms(BioModSegment):
         translations = ""
 
         mass, com_global, inertia = human.combine_inertia(("A1", "B1"))
-        com = np.asarray(com_global - human.C.center_of_mass).reshape(3) - UpperArms.get_origin(human)
+        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - UpperArms.get_origin(human)
 
         markers = parse_markers(label, markers)
 
@@ -1092,8 +1092,8 @@ class UpperArms(BioModSegment):
 
     @staticmethod
     def get_origin(human: yeadon.Human) -> Vec3:
-        """Get the origin of the upper arms in the global frame centered at Thorax' COM."""
-        return np.asarray(human.C.pos - human.C.center_of_mass).reshape(3)
+        """Get the origin of the upper arms in the global frame centered at Pelvis' COM."""
+        return np.asarray(human.P.pos - human.P.center_of_mass).reshape(3)
 
 
 class Forearms(BioModSegment):
@@ -1121,7 +1121,7 @@ class Forearms(BioModSegment):
         translations = ""
 
         mass, com_global, inertia = human.combine_inertia(("a2", "a3", "b2", "b3"))
-        com = np.asarray(com_global - human.C.center_of_mass).reshape(3) - Forearms.get_origin(human)
+        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - Forearms.get_origin(human)
 
         markers = parse_markers(label, markers)
 
@@ -1150,7 +1150,7 @@ class Forearms(BioModSegment):
     @staticmethod
     def get_origin(human: yeadon.Human) -> Vec3:
         """Get the origin of the Forearms and hands in the global frame centered at Thorax' COM."""
-        return np.asarray((human.A2.pos + human.B2.pos) / 2.0 - human.C.center_of_mass).reshape(3)
+        return np.asarray((human.A2.pos + human.B2.pos) / 2.0 - human.P.center_of_mass).reshape(3)
 
 
 class Hands(BioModSegment):
@@ -1179,7 +1179,7 @@ class Hands(BioModSegment):
         translations = ""
 
         mass, com_global, inertia = human.combine_inertia(("a4", "a5", "a6", "b4", "b5", "b6"))
-        com = np.asarray(com_global - human.C.center_of_mass).reshape(3) - Hands.get_origin(human)
+        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - Hands.get_origin(human)
 
         markers = parse_markers(label, markers)
 
@@ -1207,7 +1207,7 @@ class Hands(BioModSegment):
 
     @staticmethod
     def get_origin(human: yeadon.Human) -> Vec3:
-        """Get the origin of the Hands in the global frame centered at Thorax' COM."""
+        """Get the origin of the Hands in the global frame centered at Pelvis' COM."""
         length = (
             human.A2.solids[0].height
             + human.A2.solids[1].height
@@ -1219,7 +1219,7 @@ class Hands(BioModSegment):
         dir = (dir_A + dir_B) / 2.0
         dir = dir / np.linalg.norm(dir)
         pos = (human.A2.pos + human.B2.pos) / 2.0 + length * dir
-        return np.asarray(pos - human.C.center_of_mass).reshape(3)
+        return np.asarray(pos - human.P.center_of_mass).reshape(3)
 
 
 class Thighs(BioModSegment):
@@ -1713,4 +1713,4 @@ if __name__ == "__main__":
     #print(biohuman)
 
 # cd C:\Users\emmam\Documents\GIT\bioptim\bioptim\models\merge
-#  & C:/Users/emmam/anaconda3/envs/bioptim_env/python.exe merge_arms_v2.py female1.txt --bioModOptions female1_opt.yml
+#  & C:/Users/emmam/anaconda3/envs/bioptim_env/python.exe merge_arms_v2.py female1.txt --bioModOptions female1armMerged_opt.yml
