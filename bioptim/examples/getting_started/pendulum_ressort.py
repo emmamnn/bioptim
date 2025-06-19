@@ -1,19 +1,5 @@
-"""
-A very simple yet meaningful optimal control program consisting in a pendulum starting downward and ending upward
-while requiring the minimum of generalized forces. The solver is only allowed to move the pendulum sideways.
-
-This simple example is a good place to start investigating bioptim as it describes the most common dynamics out there
-(the joint torque driven), it defines an objective function and some boundaries and initial guesses
-
-During the optimization process, the graphs are updated real-time (even though it is a bit too fast and short to really
-appreciate it). Finally, once it finished optimizing, it animates the model using the optimal solution
-"""
-
-import platform
-
 import numpy as np
 from casadi import MX, vertcat, sign
-from matplotlib import pyplot as plt
 
 from bioptim import (
     Node,
@@ -80,9 +66,11 @@ def custom_dynamic(
     qdot = DynamicsFunctions.get(nlp.states["qdot"], states)
     tau = DynamicsFunctions.get(nlp.controls["tau"], controls)
 
-    stiffness = 1000
-    tau -= sign(q[0]) * stiffness * q[0]  # damping
-    
+    stiffness = 100
+    tau[0] -= stiffness * q[0]  # damping
+    #tau[1] -= sign(q[1]) * stiffness * q[1]  # damping
+
+
     qddot = nlp.model.forward_dynamics(with_contact=False)(q, qdot, tau, [], [])
 
     return DynamicsEvaluation(dxdt=vertcat(qdot, qddot), defects=None)
@@ -162,7 +150,7 @@ def prepare_ocp(
     bio_model = BiorbdModel(biorbd_model_path)
 
     # Add objective functions
-    objective_functions = Objective(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau")
+    objective_functions = Objective(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True,)
 
     # Dynamics
     dynamics = Dynamics(
@@ -172,35 +160,47 @@ def prepare_ocp(
         phase_dynamics=phase_dynamics,
     )
 
-    constraint_list = ConstraintList()
+    #constraint_list = ConstraintList()
 
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.START, min_bound=0, max_bound=0)
+    # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.START, min_bound=0, max_bound=0)
+    #
+    # # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.END, min_bound=0, max_bound=0)
+    # # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.END, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.END, min_bound=np.pi, max_bound=np.pi)
+    # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.END, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.END, min_bound=0, max_bound=0)
+    #constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.END, min_bound=0, max_bound=0)
 
-    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.END, min_bound=0, max_bound=0)
-    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.END, min_bound=np.pi, max_bound=np.pi)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.END, min_bound=0, max_bound=0)
+    x_bounds = BoundsList()
+    x_bounds["q"] = bio_model.bounds_from_ranges("q")
+    x_bounds["qdot"] = bio_model.bounds_from_ranges("qdot")
 
-
+    x_bounds["q"][:, 0] = 0 #rotations start at 0
+    #x_bounds["qdot"][:, 0] = 0 #speeds start at 0
+    x_bounds["q"][1,-1] = np.pi #ends with first pendulum 180 degrees rotated
+    #x_bounds["q"][2, -1] = 0
 
     # Initial guess (optional since it is 0, we show how to initialize anyway)
     x_init = InitialGuessList()
     x_init["q"] = [0.01] * bio_model.nb_q
     x_init["qdot"] = [0.01] * bio_model.nb_qdot
 
+    #x_init["q"] = [0, 0.01, 0.01]
+    #x_init["qdot"] = [0, 0, 0]
+
     # Define control path bounds
     n_tau = bio_model.nb_tau
     u_bounds = BoundsList()
     u_bounds["tau"] = [-100] * n_tau, [100] * n_tau  # Limit the strength of the pendulum to (-100 to 100)...
-    u_bounds["tau"][1, :] = 0  # ...but remove the capability to actively rotate
-    u_bounds["tau"][0, :] = 0  # ...but remove the capability to actively translate verticaly
+    #u_bounds["tau"][1, :] = 0  # ...but remove the capability to actively rotate
+    #u_bounds["tau"][0, :] = 0  # ...but remove the capability to actively translate verticaly
+    #u_bounds["tau"][0, :] = -100
+    #u_bounds["tau"][1, :] = 100
 
     # Initial guess (optional since it is 0, we show how to initialize anyway)
     u_init = InitialGuessList()
@@ -213,13 +213,13 @@ def prepare_ocp(
         final_time,
         x_init=x_init,
         u_init=u_init,
-       # x_bounds=x_bounds,
+        x_bounds=x_bounds,
         u_bounds=u_bounds,
         objective_functions=objective_functions,
         use_sx=use_sx,
         n_threads=n_threads,
         control_type=control_type,
-        constraints=constraint_list,
+        #constraints=constraint_list,
     )
 
 
@@ -229,7 +229,7 @@ def main():
     """
 
     # --- Prepare the ocp --- #
-    ocp = prepare_ocp(biorbd_model_path="./models/double_pendulumV.bioMod", final_time=4, n_shooting=40, n_threads=2)
+    ocp = prepare_ocp(biorbd_model_path="./models/double_pendulumV.bioMod", final_time=4, n_shooting=30, n_threads=2)
 
     # --- Live plots --- #
     ocp.add_plot_penalty(CostType.ALL)  # This will display the objectives and constraints at the current iteration
@@ -259,7 +259,7 @@ def main():
     #sol = ocp.solve(Solver.IPOPT())
     # --- Show the results graph --- #
     sol.print_cost()
-    # sol.graphs(show_bounds=True, save_name="results.png")
+    #sol.graphs(show_bounds=True)
 
     # --- Animate the solution --- #
     viewer = "bioviz"
