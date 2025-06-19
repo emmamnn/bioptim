@@ -80,7 +80,7 @@ def custom_dynamic(
     qdot = DynamicsFunctions.get(nlp.states["qdot"], states)
     tau = DynamicsFunctions.get(nlp.controls["tau"], controls)
 
-    stiffness = 1000
+    stiffness = 500
     tau -= sign(q[0]) * stiffness * q[0]  # damping
     
     qddot = nlp.model.forward_dynamics(with_contact=False)(q, qdot, tau, [], [])
@@ -172,23 +172,30 @@ def prepare_ocp(
         phase_dynamics=phase_dynamics,
     )
 
-    constraint_list = ConstraintList()
+    #constraint_list = ConstraintList()
 
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.START, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.START, min_bound=0, max_bound=0)
+    # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.START, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.START, min_bound=0, max_bound=0)
+    #
+    # # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.END, min_bound=0, max_bound=0)
+    # # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.END, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.END, min_bound=np.pi, max_bound=np.pi)
+    # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.END, min_bound=0, max_bound=0)
+    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.END, min_bound=0, max_bound=0)
+    #constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.END, min_bound=0, max_bound=0)
 
-    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.END, min_bound=0, max_bound=0)
-    # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.END, min_bound=np.pi, max_bound=np.pi)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=2, node=Node.END, min_bound=0, max_bound=0)
-    constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=2, node=Node.END, min_bound=0, max_bound=0)
-
-
+    x_bounds = BoundsList()
+    x_bounds["q"] = bio_model.bounds_from_ranges("q")
+    x_bounds["qdot"] = bio_model.bounds_from_ranges("qdot")
+    
+    x_bounds["q"][1:2, 0] = 0 #rotations start at 0
+    x_bounds["qdot"][:, 0] = 0 #speeds start at 0
+    x_bounds["q"][1,-1] = np.pi #ends with first pendulum 180 degrees rotated
+    x_bounds["q"][2, -1] = 0
 
     # Initial guess (optional since it is 0, we show how to initialize anyway)
     x_init = InitialGuessList()
@@ -213,13 +220,13 @@ def prepare_ocp(
         final_time,
         x_init=x_init,
         u_init=u_init,
-       # x_bounds=x_bounds,
+        x_bounds=x_bounds,
         u_bounds=u_bounds,
         objective_functions=objective_functions,
         use_sx=use_sx,
         n_threads=n_threads,
         control_type=control_type,
-        constraints=constraint_list,
+        #constraints=constraint_list,
     )
 
 
