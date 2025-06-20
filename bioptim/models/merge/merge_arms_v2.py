@@ -1093,7 +1093,7 @@ class UpperArms(BioModSegment):
     @staticmethod
     def get_origin(human: yeadon.Human) -> Vec3:
         """Get the origin of the upper arms in the global frame centered at Pelvis' COM."""
-        return np.asarray(human.P.pos - human.P.center_of_mass).reshape(3)
+        return np.asarray(human.A1.pos + human.B1.pos) / 2.0 - human.P.center_of_mass).reshape(3)
 
 
 class Forearms(BioModSegment):
@@ -1693,24 +1693,30 @@ def parse_biomod_options(filename):
 
 if __name__ == "__main__":
     import argparse
+    import os
 
-    parser = argparse.ArgumentParser(description="Convert yeadon human model to bioMod.")
-    parser.add_argument("meas", help="measurement file of the human")
-    parser.add_argument("--bioModOptions", nargs=1, help="option file for the bioMod")
-    args = parser.parse_args()
 
-    bioModOptions = args.bioModOptions[0] if args.bioModOptions else None
+    # Chemin vers le dossier contenant les fichiers
+    base_path = r"C:/Users/emmam/Documents/GIT/bioptim/bioptim/models/merge"
 
-    human = yeadon.Human(args.meas)
+    # Noms des fichiers
+    meas_file = os.path.join(base_path, "female1.txt")
+    bioModOptions_file = os.path.join(base_path, "female1armMerged_opt.yml")  # ou None
+
+    # Chargement des options biomod
+    bioModOptions = bioModOptions_file if os.path.isfile(bioModOptions_file) else None
+
+    # Création du modèle humain
+    human = yeadon.Human(meas_file)
     BioHuman, human_options, segments_options = parse_biomod_options(bioModOptions)
 
+    # Création du modèle biomod
     biohuman = BioHuman(human, **human_options, **segments_options)
+    # Nom du fichier de sortie
+    name = os.path.splitext(os.path.basename(meas_file))[0]
+    output_file = os.path.join(base_path, f"{name}.bioMod")
 
-    name = args.meas.split(".")[0]
-    f = open(f"{name}.bioMod", "w")
-    f.write(str(biohuman))
-    f.close()
-    #print(biohuman)
-
-# cd C:\Users\emmam\Documents\GIT\bioptim\bioptim\models\merge
-#  & C:/Users/emmam/anaconda3/envs/bioptim_env/python.exe merge_arms_v2.py female1.txt --bioModOptions female1armMerged_opt.yml
+    with open(output_file, "w") as f:
+        f.write(str(biohuman))
+        
+    print(f"Fichier généré : {output_file}")
