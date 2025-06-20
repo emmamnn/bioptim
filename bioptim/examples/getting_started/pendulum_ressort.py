@@ -66,8 +66,8 @@ def custom_dynamic(
     qdot = DynamicsFunctions.get(nlp.states["qdot"], states)
     tau = DynamicsFunctions.get(nlp.controls["tau"], controls)
 
-    tau[0] -= stiffness * q[0]  # damping
     stiffness = 100
+    tau[0] -= stiffness * q[0]  # damping
     #tau[1] -= sign(q[1]) * stiffness * q[1]  # damping
 
 
