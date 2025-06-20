@@ -1039,188 +1039,6 @@ class RightFoot(BioModSegment):
         pos = human.K2.pos + length * dir
         return np.asarray(pos - human.P.center_of_mass).reshape(3)
 
-class UpperArms(BioModSegment):
-    """The upper arms of a human if they must remain together."""
-
-    def __init__(
-        self,
-        human: yeadon.Human,
-        label: str = "",
-        parent: str = Thorax.__name__,
-        rt: Vec3 = O,
-        rotations: str = "",
-        rangesQ: list[Vec2] = None,
-        mesh: list[Vec3] = [(0, 0, 0)],
-        meshfile: str = None,
-        meshcolor: Vec3 = None,
-        meshscale: Vec3 = None,
-        meshrt: Vec3 = None,
-        meshxyz: Vec3 = None,
-        patch: list[Vec3] = None,
-        markers: dict[dict] = {},
-    ):
-        label = label or UpperArms.__name__
-        xyz = UpperArms.get_origin(human) - Thorax.get_origin(human)
-        translations = ""
-
-        mass, com_global, inertia = human.combine_inertia(("A1", "B1"))
-        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - UpperArms.get_origin(human)
-
-        markers = parse_markers(label, markers)
-
-        BioModSegment.__init__(
-            self,
-            label=label,
-            parent=parent,
-            rt=rt,
-            xyz=xyz,
-            translations=translations,
-            rotations=rotations,
-            com=com,
-            mass=mass,
-            inertia=inertia,  # I can do this because the systems of coordinates are aligned.
-            rangesQ=rangesQ,
-            mesh=mesh,
-            meshfile=meshfile,
-            meshcolor=meshcolor,
-            meshscale=meshscale,
-            meshrt=meshrt,
-            meshxyz=meshxyz,
-            patch=patch,
-            markers=markers,
-        )
-
-    @staticmethod
-    def get_origin(human: yeadon.Human) -> Vec3:
-        """Get the origin of the upper arms in the global frame centered at Pelvis' COM."""
-        return np.asarray((human.A1.pos + human.B1.pos) / 2.0 - human.P.center_of_mass).reshape(3)
-
-
-class Forearms(BioModSegment):
-    """The Forearms of a human if they must remain together."""
-
-    def __init__(
-        self,
-        human: yeadon.Human,
-        label: str = "",
-        parent: str = UpperArms.__name__,
-        rt: Vec3 = O,
-        rotations: str = "",
-        rangesQ: list[Vec2] = None,
-        mesh: list[Vec3] = [(0, 0, 0)],
-        meshfile: str = None,
-        meshcolor: Vec3 = None,
-        meshscale: Vec3 = None,
-        meshrt: Vec3 = None,
-        meshxyz: Vec3 = None,
-        patch: list[Vec3] = None,
-        markers: dict[dict] = {},
-    ):
-        label = label or Forearms.__name__
-        xyz = Forearms.get_origin(human) - UpperArms.get_origin(human)
-        translations = ""
-
-        mass, com_global, inertia = human.combine_inertia(("a2", "a3", "b2", "b3"))
-        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - Forearms.get_origin(human)
-
-        markers = parse_markers(label, markers)
-
-        BioModSegment.__init__(
-            self,
-            label=label,
-            parent=parent,
-            rt=rt,
-            xyz=xyz,
-            translations=translations,
-            rotations=rotations,
-            com=com,
-            mass=mass,
-            inertia=inertia,  # I can do this because the systems of coordinates are aligned.
-            rangesQ=rangesQ,
-            mesh=mesh,
-            meshfile=meshfile,
-            meshcolor=meshcolor,
-            meshscale=meshscale,
-            meshrt=meshrt,
-            meshxyz=meshxyz,
-            patch=patch,
-            markers=markers,
-        )
-
-    @staticmethod
-    def get_origin(human: yeadon.Human) -> Vec3:
-        """Get the origin of the Forearms and hands in the global frame centered at Thorax' COM."""
-        return np.asarray((human.A2.pos + human.B2.pos) / 2.0 - human.P.center_of_mass).reshape(3)
-
-
-class Hands(BioModSegment):
-    """The Hands of a human if they must remain together."""
-
-    def __init__(
-        self,
-        human: yeadon.Human,
-        label: str = "",
-        parent: str = Forearms.__name__,
-        rt: Vec3 = O,
-        rotations: str = "",
-        rangesQ: list[Vec2] = None,
-        mesh: list[Vec3] = [(0, 0, 0)],
-        meshfile: str = None,
-        meshcolor: Vec3 = None,
-        meshscale: Vec3 = None,
-        meshrt: Vec3 = None,
-        meshxyz: Vec3 = None,
-        patch: list[Vec3] = None,
-        markers: dict[dict] = {},
-    ):
-        label = label or Hands.__name__
-
-        xyz = Hands.get_origin(human) - Forearms.get_origin(human)
-        translations = ""
-
-        mass, com_global, inertia = human.combine_inertia(("a4", "a5", "a6", "b4", "b5", "b6"))
-        com = np.asarray(com_global - human.P.center_of_mass).reshape(3) - Hands.get_origin(human)
-
-        markers = parse_markers(label, markers)
-
-        BioModSegment.__init__(
-            self,
-            label=label,
-            parent=parent,
-            rt=rt,
-            xyz=xyz,
-            translations=translations,
-            rotations=rotations,
-            com=com,
-            mass=mass,
-            inertia=inertia,  # I can do this because the systems of coordinates are aligned.
-            rangesQ=rangesQ,
-            mesh=mesh,
-            meshfile=meshfile,
-            meshcolor=meshcolor,
-            meshscale=meshscale,
-            meshrt=meshrt,
-            meshxyz=meshxyz,
-            patch=patch,
-            markers=markers,
-        )
-
-    @staticmethod
-    def get_origin(human: yeadon.Human) -> Vec3:
-        """Get the origin of the Hands in the global frame centered at Pelvis' COM."""
-        length = (
-            human.A2.solids[0].height
-            + human.A2.solids[1].height
-            + human.B2.solids[0].height
-            + human.B2.solids[1].height
-        ) / 2.0
-        dir_A = human.A2.end_pos - human.A2.pos
-        dir_B = human.B2.end_pos - human.B2.pos
-        dir = (dir_A + dir_B) / 2.0
-        dir = dir / np.linalg.norm(dir)
-        pos = (human.A2.pos + human.B2.pos) / 2.0 + length * dir
-        return np.asarray(pos - human.P.center_of_mass).reshape(3)
-
 
 class Thighs(BioModSegment):
     """The tighs of a human if they must remain together."""
@@ -1582,89 +1400,6 @@ class BioModHumanFusedLegs:
 
         return biomod
 
-class BioModHumanFusedArms:
-    def __init__(self, human: yeadon.Human, gravity: Vec3 = None, **segments_options):
-        self.gravity = gravity
-        self.pelvis = Pelvis(human, **segments_options[Pelvis.__name__] if Pelvis.__name__ in segments_options else {})
-        self.thorax = Thorax(
-            human,
-            parent=self.pelvis.label,
-            **segments_options[Thorax.__name__] if Thorax.__name__ in segments_options else {},
-        )
-        self.head = Head(
-            human,
-            parent=self.thorax.label,
-            **segments_options[Head.__name__] if Head.__name__ in segments_options else {},
-        )
-        self.upper_arms = UpperArms(
-            human,
-            parent=self.thorax.label,
-            **segments_options[UpperArms.__name__] if UpperArms.__name__ in segments_options else {},
-        )
-        self.forearms = Forearms(
-            human,
-            parent=self.upper_arms.label,
-            **segments_options[Forearms.__name__] if Forearms.__name__ in segments_options else {},
-        )
-        self.hands = Hands(
-            human,
-            parent=self.forearms.label,
-            **segments_options[Hands.__name__] if Hands.__name__ in segments_options else {},
-        )
-        
-        self.right_thigh = RightThigh(
-            human,
-            parent=self.pelvis.label,
-            **segments_options[RightThigh.__name__] if RightThigh.__name__ in segments_options else {},
-        )
-        self.right_shank = RightShank(
-            human,
-            parent=self.right_thigh.label,
-            **segments_options[RightShank.__name__] if RightShank.__name__ in segments_options else {},
-        )
-        self.right_foot = RightFoot(
-            human,
-            parent=self.right_shank.label,
-            **segments_options[RightFoot.__name__] if RightFoot.__name__ in segments_options else {},
-        )
-        self.left_thigh = LeftThigh(
-            human,
-            parent=self.pelvis.label,
-            **segments_options[LeftThigh.__name__] if LeftThigh.__name__ in segments_options else {},
-        )
-        self.left_shank = LeftShank(
-            human,
-            parent=self.left_thigh.label,
-            **segments_options[LeftShank.__name__] if LeftShank.__name__ in segments_options else {},
-        )
-        self.left_foot = LeftFoot(
-            human,
-            parent=self.left_shank.label,
-            **segments_options[LeftFoot.__name__] if LeftFoot.__name__ in segments_options else {},
-        )
-
-
-    def __str__(self):
-        biomod = "version 4\n\nroot_actuated 0\nexternal_forces 0\n\n"
-        if self.gravity:
-            biomod += f"gravity {format_vec(self.gravity)}\n\n"
-        biomod += f"{self.pelvis}\n\n"
-        biomod += f"{self.thorax}\n\n"
-        biomod += f"{self.head}\n\n"
-        biomod += f"{self.upper_arms}\n\n"
-        biomod += f"{self.forearms}\n\n"
-        biomod += f"{self.hands}\n\n"
-        biomod += f"{self.right_thigh}\n\n"
-        biomod += f"{self.right_shank}\n\n"
-        biomod += f"{self.right_foot}\n\n"
-        biomod += f"{self.left_thigh}\n\n"
-        biomod += f"{self.left_shank}\n\n"
-        biomod += f"{self.left_foot}\n"
-
-        return biomod
-
-
-
 
 def parse_biomod_options(filename):
     Human = BioModHuman
@@ -1682,7 +1417,7 @@ def parse_biomod_options(filename):
         del biomod_options["Human"]
         if "fused" in human_options:
             if human_options["fused"]:
-                Human = BioModHumanFusedArms
+                Human = BioModHumanFusedLegs
             del human_options["fused"]
 
     segments_options = biomod_options
@@ -1693,30 +1428,21 @@ def parse_biomod_options(filename):
 
 if __name__ == "__main__":
     import argparse
-    import os
 
+    parser = argparse.ArgumentParser(description="Convert yeadon human model to bioMod.")
+    parser.add_argument("meas", help="measurement file of the human")
+    parser.add_argument("--bioModOptions", nargs=1, help="option file for the bioMod")
+    args = parser.parse_args()
 
-    # Chemin vers le dossier contenant les fichiers
-    base_path = r"C:/Users/emmam/Documents/GIT/bioptim/bioptim/models/merge"
+    bioModOptions = args.bioModOptions[0] if args.bioModOptions else None
 
-    # Noms des fichiers
-    meas_file = os.path.join(base_path, "female1.txt")
-    bioModOptions_file = os.path.join(base_path, "female1armMerged_opt.yml")  # ou None
-
-    # Chargement des options biomod
-    bioModOptions = bioModOptions_file if os.path.isfile(bioModOptions_file) else None
-
-    # Création du modèle humain
-    human = yeadon.Human(meas_file)
+    human = yeadon.Human(args.meas)
     BioHuman, human_options, segments_options = parse_biomod_options(bioModOptions)
 
-    # Création du modèle biomod
     biohuman = BioHuman(human, **human_options, **segments_options)
-    # Nom du fichier de sortie
-    name = os.path.splitext(os.path.basename(meas_file))[0]
-    output_file = os.path.join(base_path, f"{name}.bioMod")
 
-    with open(output_file, "w") as f:
-        f.write(str(biohuman))
-        
-    print(f"Fichier généré : {output_file}")
+    name = args.meas.split(".")[0]
+    f = open(f"{name}.bioMod", "w")
+    f.write(str(biohuman))
+    f.close()
+    #print(biohuman)

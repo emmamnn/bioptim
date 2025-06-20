@@ -2,7 +2,7 @@
 # This file is used by biomake to generate the bioMod from measurements.
 #
 Human:
-  fused: True
+  fused: False
 
 Pelvis:
   label: ThePelvis
@@ -20,27 +20,40 @@ Thorax:
 Head:
   meshfile: Model_mesh/tete.stl
 
-UpperArms:
+RightUpperArm:
+  rt: [0, .17, 0]
   rotations: zy
   rangesQ: [[-2.15, .5], [-.05, 3]]
-  markers:
-    UpperArmsCOM:
-      position: [0, 0, 0]
+  meshfile: Model_mesh/bras.stl
 
-Forearms:
+RightForearm:
   rotations: zy
   rangesQ: [[-2.8, .3], [0., 2.65]]
+  meshfile: Model_mesh/avantbras.stl
+
+RightHand:
+  meshfile: Model_mesh/main.stl
   markers:
-    ForearmsCOM:
-      position: [0, 0, 0]
+    MidRightHand:
+      position: [0, 0, -.1]
 
+LeftUpperArm:
+  rt: [0, -.17, 0]
+  rotations: zy
+  rangesQ: [[-.5, 2.15], [-3, .05]]
+  meshfile: Model_mesh/bras.stl
 
+LeftForearm:
+  rotations: zy
+  rangesQ: [[-.3, 2.8], [-2.65, 0.]]
+  meshfile: Model_mesh/avantbras.stl
 
-Hands:
+LeftHand:
+  label: LeftHandAuJo
+  meshfile: Model_mesh/main.stl
   markers:
-    HandsCOM:
-      position: [0, 0, 0]
-
+    MidHandLeft:
+      position: [0, 0, -.1]
 
 LeftThigh:
   rotations: xy
@@ -75,3 +88,4 @@ RightShank:
 
 RightFoot:
   meshfile: Model_mesh/foot.stl
+

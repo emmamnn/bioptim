@@ -44,31 +44,31 @@ endsegment
 
 segment UpperArms
 	parent Thorax
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.193
-	rotations zy
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.286
+	rotations zx
 	rangesQ
 		-2.15 0.5
 		-.05 3
-	com 0.0 0.0 0.35560097721502265
+	com 0.0 0.0 -0.12339902278497733
 	mass 3.053884275655435
 	inertia
 		0.017731207652583694 0.0 0.0
 		0.0 0.0758893797981658 0.0
 		0.0 0.0 0.06091595377637793
-	mesh 0 0 0
+	meshfile Model_mesh/bras_modif.stl
+	meshrt 0 0 0 xyz -0.185502 -0.047833 -0.259579 
 endsegment
 
-marker UpperArmsCOM
-	parent UpperArms
-	rt 0 0 0 xyz 0 0 0
-endmarker
+	marker UpperArmsCOM
+		parent UpperArms
+		position 0 0 0
+	endmarker
 
 segment Forearms
 	parent UpperArms
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.21949999999999997
-	rotations zy
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.2595
+	rotations x
 	rangesQ
-		-2.8 0.3
 		0.0 2.65
 	com 0.0 0.0 -0.11719050711589621
 	mass 1.618120226980928
@@ -76,13 +76,14 @@ segment Forearms
 		0.008730505622941635 0.0 0.0
 		0.0 0.039545987225566424 0.0
 		0.0 0.0 0.03168842470089177
-	mesh 0 0 0
+	meshfile Model_mesh/avantbras_modif.stl
+	meshrt 0 0 0 xyz -0.183056 -0.044980 -0.215604
 endsegment
 
-marker ForearmsCOM
-	parent Forearms
-	rt 0 0 0 xyz 0 0 0
-endmarker
+	marker ForearmsCOM
+		parent Forearms
+		position 0 0 0
+	endmarker
 
 segment Hands
 	parent Forearms
@@ -93,7 +94,8 @@ segment Hands
 		0.0009022465368776878 0.0 0.0
 		0.0 0.012402784480396958 0.0
 		0.0 0.0 0.011624175734125972
-	mesh 0 0 0
+	meshfile Model_mesh/main_modif.stl
+	meshrt 0 0 0 xyz -0.192053 -0.054101 -0.104327
 endsegment
 
 	marker HandsCOM
@@ -127,6 +129,7 @@ segment RightShank
 		0.0 0.041541588346640027 0.0
 		0.0 0.0 0.004620921782760292
 	meshfile Model_mesh/leg_right.stl
+	meshrt 0 0.09 0 xyz 0 0 0
 endsegment
 
 	marker TargetRightHand
@@ -141,7 +144,7 @@ endsegment
 
 segment RightFoot
 	parent RightShank
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.382600
 	com 0.0 0.0 -0.06776112120416113
 	mass 0.6906250348530587
 	inertia
@@ -177,6 +180,7 @@ segment LeftShank
 		0.0 0.041541588346640027 0.0
 		0.0 0.0 0.004620921782760292
 	meshfile Model_mesh/leg_left.stl
+	meshrt 0 -0.09 0 xyz 0 0 0
 endsegment
 
 	marker TargetRightHand
@@ -191,7 +195,7 @@ endsegment
 
 segment LeftFoot
 	parent LeftShank
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.382600
 	com 0.0 0.0 -0.06776112120416113
 	mass 0.6906250348530587
 	inertia

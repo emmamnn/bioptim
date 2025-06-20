@@ -1,0 +1,55 @@
+version 4
+
+root_actuated 0
+external_forces 0
+
+gravity 0 0 -9.81
+
+segment Barre 
+    rt 0 0 0 xyz 0 0 0 //position de la barre 
+endsegment  
+
+marker MarkerBarre
+	parent Barre
+	rt 0 0 0 xyz 0 0 0
+endmarker 
+
+
+segment HandsRotations 
+	parent Barre
+	rt 0 0 0 xyz 0 0 0 
+	rotations x
+endsegment 
+
+
+segment HandsPosition
+	parent HandsRotations
+	rt 0 0 0 xyz 0 0 0.144217
+	translations xyz
+	com -2.900230926866218e-18 0.0 -0.06295280579284158
+	mass 0.5981328796639049
+	inertia
+		0.0009022465368776878 0.0 0.0
+		0.0 0.012402784480396958 0.0
+		0.0 0.0 0.011624175734125972
+	meshfile Model_mesh/main_modif.stl
+	meshrt 0 0 0 xyz -0.192053 -0.054101 -0.144217
+endsegment
+
+segment WristRotations 
+
+segment Forearms
+	parent UpperArms
+	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.2595
+	rotations x
+	rangesQ
+		0.0 2.65
+	com 0.0 0.0 -0.11719050711589621
+	mass 1.618120226980928
+	inertia
+		0.008730505622941635 0.0 0.0
+		0.0 0.039545987225566424 0.0
+		0.0 0.0 0.03168842470089177
+	meshfile Model_mesh/avantbras_modif.stl
+	meshrt 0 0 0 xyz -0.183056 -0.044980 -0.215604
+endsegment
