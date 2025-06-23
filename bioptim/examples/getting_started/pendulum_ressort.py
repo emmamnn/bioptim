@@ -1,6 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt 
 from casadi import MX, vertcat, sign
-
+import os
+import rerun as rr
 from bioptim import (
     Node,
     ConstraintList,
@@ -25,8 +27,45 @@ from bioptim import (
     PhaseDynamics,
     OnlineOptim,
     ContactType,
-    DynamicsEvaluation
+    DynamicsEvaluation,
+    PenaltyController,
+    SolutionMerge
 )
+
+import shutil
+
+
+
+def custom_func_marker_y_above_marker(controller: PenaltyController, marker_name: str, reference_marker_name: str) -> MX:
+    """
+    User-defined constraint that ensures a marker's Y-position is greater than or equal to another marker's Y-position.
+
+    Parameters
+    ----------
+    controller: PenaltyController
+        The penalty node elements
+    marker_name: str
+        The marker to be constrained (e.g., "marker_6")
+    reference_marker_name: str
+        The reference marker (e.g., "LowerBar")
+
+    Returns
+    -------
+    MX
+        The constraint value: should be >= 0 to satisfy the condition
+    """
+    
+    # Get the index of the markers from their name
+    marker_i = controller.model.marker_index(marker_name) #marker_6
+    ref = controller.model.marker_index(reference_marker_name) #LowerBar
+
+    # compute the position of the markers using the markers function from the BioModel (here a BiorbdModel)
+    markers = controller.model.markers()(controller.states["q"].cx, controller.parameters.cx)
+    markers_diff = markers[:, marker_i] - markers[:, ref]
+
+    return markers_diff[1] #composante Y 
+
+
 
 def custom_dynamic(
     time: MX,
@@ -160,7 +199,13 @@ def prepare_ocp(
         phase_dynamics=phase_dynamics,
     )
 
-    #constraint_list = ConstraintList()
+
+    
+    # Constraints
+    constraint_list = ConstraintList()
+    #don't forget min and max bound so it is a inequality constraint (0<= diff <= inf) 
+    constraint_list.add(custom_func_marker_y_above_marker, node=Node.ALL, marker_name="marker_6", reference_marker_name = "LowerBar", min_bound = 0, max_bound = np.inf)
+
 
     # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
     # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
@@ -182,16 +227,16 @@ def prepare_ocp(
 
     x_bounds["q"][:, 0] = 0 #rotations start at 0
     #x_bounds["qdot"][:, 0] = 0 #speeds start at 0
+    x_bounds["q"][:, -1] = 0
     x_bounds["q"][1,-1] = np.pi #ends with first pendulum 180 degrees rotated
-    #x_bounds["q"][2, -1] = 0
+
+
 
     # Initial guess (optional since it is 0, we show how to initialize anyway)
     x_init = InitialGuessList()
     x_init["q"] = [0.01] * bio_model.nb_q
     x_init["qdot"] = [0.01] * bio_model.nb_qdot
 
-    #x_init["q"] = [0, 0.01, 0.01]
-    #x_init["qdot"] = [0, 0, 0]
 
     # Define control path bounds
     n_tau = bio_model.nb_tau
@@ -219,7 +264,7 @@ def prepare_ocp(
         use_sx=use_sx,
         n_threads=n_threads,
         control_type=control_type,
-        #constraints=constraint_list,
+        constraints=constraint_list,
     )
 
 
@@ -229,7 +274,7 @@ def main():
     """
 
     # --- Prepare the ocp --- #
-    ocp = prepare_ocp(biorbd_model_path="./models/double_pendulumV.bioMod", final_time=4, n_shooting=30, n_threads=2)
+    ocp = prepare_ocp(biorbd_model_path="./examples/getting_started/models/triple_pendulum.bioMod", final_time=4, n_shooting=30, n_threads=2)
 
     # --- Live plots --- #
     ocp.add_plot_penalty(CostType.ALL)  # This will display the objectives and constraints at the current iteration
@@ -259,14 +304,16 @@ def main():
     #sol = ocp.solve(Solver.IPOPT())
     # --- Show the results graph --- #
     sol.print_cost()
-    #sol.graphs(show_bounds=True)
+    sol.graphs(show_bounds=True)
 
     # --- Animate the solution --- #
-    viewer = "bioviz"
+    #viewer = "bioviz"
     #
-    #viewer = "pyorerun"
+    viewer = "pyorerun"
     sol.animate(n_frames=0, viewer=viewer, show_now=True)
 
+
+    
     # # --- Saving the solver's output after the optimization --- #
     # Here is an example of how we recommend to save the solution. Please note that sol.ocp is not picklable and that sol will be loaded using the current bioptim version, not the version at the time of the generation of the results.
     # import pickle
@@ -316,4 +363,9 @@ def main():
 
 
 if __name__ == "__main__":
+
+
+    os.environ["PATH"] = "/home/emmamnn/.local/bin:" + os.environ["PATH"]
+    print(os.environ["PATH"])
+    print(shutil.which("rerun"))
     main()
