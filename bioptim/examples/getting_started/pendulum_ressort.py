@@ -201,13 +201,13 @@ def prepare_ocp(
 
 
     
-    # Constraints
+    #Constraints
     constraint_list = ConstraintList()
     #don't forget min and max bound so it is a inequality constraint (0<= diff <= inf) 
     constraint_list.add(custom_func_marker_y_above_marker, node=Node.ALL, marker_name="marker_6", reference_marker_name = "LowerBar", min_bound = 0, max_bound = np.inf)
 
 
-    # #constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
+    #constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=0, node=Node.START, min_bound=-0.020, max_bound=-0.019)
     # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=0, node=Node.START, min_bound=0, max_bound=0)
     # constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", index=1, node=Node.START, min_bound=0, max_bound=0)
     # constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", index=1, node=Node.START, min_bound=0, max_bound=0)
@@ -226,7 +226,7 @@ def prepare_ocp(
     x_bounds["qdot"] = bio_model.bounds_from_ranges("qdot")
 
     x_bounds["q"][:, 0] = 0 #rotations start at 0
-    #x_bounds["qdot"][:, 0] = 0 #speeds start at 0
+    x_bounds["qdot"][:, 0] = 0 #speeds start at 0
     x_bounds["q"][:, -1] = 0
     x_bounds["q"][1,-1] = np.pi #ends with first pendulum 180 degrees rotated
 
@@ -269,25 +269,20 @@ def prepare_ocp(
 
 
 def main():
+    RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/"
     """
     If pendulum is run as a script, it will perform the optimization and animates it
     """
 
     # --- Prepare the ocp --- #
-    ocp = prepare_ocp(biorbd_model_path="./examples/getting_started/models/triple_pendulum.bioMod", final_time=4, n_shooting=30, n_threads=2)
+    ocp = prepare_ocp(biorbd_model_path=RAC+"examples/getting_started/models/triple_pendulum.bioMod", final_time=4, n_shooting=30, n_threads=2)
 
     # --- Live plots --- #
     ocp.add_plot_penalty(CostType.ALL)  # This will display the objectives and constraints at the current iteration
     # ocp.add_plot_check_conditioning()  # This will display the conditioning of the problem at the current iteration
     # ocp.add_plot_ipopt_outputs()  # This will display the solver's output at the current iteration
 
-    # --- Saving the solver's output during the optimization --- #
-    # path_to_results = "temporary_results/"
-    # result_file_name = "pendulum"
-    # nb_iter_save = 10  # Save the solver's output every 10 iterations
-    # ocp.save_intermediary_ipopt_iterations(
-    #     path_to_results, result_file_name, nb_iter_save
-    # )  # This will save the solver's output at each iteration
+
 
     # --- If one is interested in checking the conditioning of the problem, they can uncomment the following line --- #
     # ocp.check_conditioning()
@@ -300,72 +295,20 @@ def main():
     # To see the graphs on MacOS, one must run the server manually (see resources/plotting_server.py)
     #sol = ocp.solve()
     sol = ocp.solve(Solver.IPOPT(online_optim=OnlineOptim.DEFAULT))
-    #sol = ocp.solve(Solver.IPOPT(online_optim=OnlineOptim.MULTIPROCESS_SERVER))
-    #sol = ocp.solve(Solver.IPOPT())
-    # --- Show the results graph --- #
-    sol.print_cost()
-    sol.graphs(show_bounds=True)
-
-    # --- Animate the solution --- #
-    #viewer = "bioviz"
-    #
-    viewer = "pyorerun"
-    sol.animate(n_frames=0, viewer=viewer, show_now=True)
-
 
     
-    # # --- Saving the solver's output after the optimization --- #
-    # Here is an example of how we recommend to save the solution. Please note that sol.ocp is not picklable and that sol will be loaded using the current bioptim version, not the version at the time of the generation of the results.
-    # import pickle
-    # import git
-    # from datetime import date
-    #
-    # # Save the version of bioptim and the date of the optimization for future reference
-    # repo = git.Repo(search_parent_directories=True)
-    # commit_id = str(repo.commit())
-    # branch = str(repo.active_branch)
-    # tag = repo.git.describe("--tags")
-    # bioptim_version = repo.git.version_info
-    # git_date = repo.git.log("-1", "--format=%cd")
-    # version_dic = {
-    #     "commit_id": commit_id,
-    #     "git_date": git_date,
-    #     "branch": branch,
-    #     "tag": tag,
-    #     "bioptim_version": bioptim_version,
-    #     "date_of_the_optimization": date.today().strftime("%b-%d-%Y-%H-%M-%S"),
-    # }
-    #
-    # q = sol.decision_states(to_merge=SolutionMerge.NODES)["q"]
-    # qdot = sol.decision_states(to_merge=SolutionMerge.NODES)["qdot"]
-    # tau = sol.decision_controls(to_merge=SolutionMerge.NODES)["tau"]
-    #
-    # # Do everything you need with the solution here before we delete ocp
-    # integrated_sol = sol.integrate(to_merge=SolutionMerge.NODES)
-    # q_integrated = integrated_sol["q"]
-    # qdot_integrated = integrated_sol["qdot"]
-    #
-    # # Save the output of the optimization
-    # with open("pendulum_data.pkl", "wb") as file:
-    #     data = {"q": q,
-    #             "qdot": qdot,
-    #             "tau": tau,
-    #             "real_time_to_optimize": sol.real_time_to_optimize,
-    #             "version": version_dic,
-    #             "q_integrated": q_integrated,
-    #             "qdot_integrated": qdot_integrated}
-    #     pickle.dump(data, file)
-    #
-    # # Save the solution for future use, you will only need to do sol.ocp = prepare_ocp() to get the same solution object as above.
-    # with open("pendulum_sol.pkl", "wb") as file:
-    #     del sol.ocp
-    #     pickle.dump(sol, file)
+    # --- Animate the solution --- #
+    #viewer = "bioviz"
+    viewer = "pyorerun"
+    sol.animate(n_frames=0, viewer=viewer, show_now=True)
+    
+    
+    # --- Show the results graph --- #
+    sol.print_cost()
+    sol.graphs(show_bounds=True,show_now=True)
 
 
 if __name__ == "__main__":
 
 
-    os.environ["PATH"] = "/home/emmamnn/.local/bin:" + os.environ["PATH"]
-    print(os.environ["PATH"])
-    print(shutil.which("rerun"))
     main()
