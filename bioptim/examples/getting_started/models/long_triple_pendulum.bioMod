@@ -18,11 +18,12 @@ endsegment
     endmarker
 
 
+
 segment UpperBar
     parent Ground
     rt 0 0 0 xyz 0 1.62 2.35 
-    mesh 0 0 0 
-    mesh 2.4 0 0 
+    mesh 0 0 0
+    mesh 2.4 0 0
 endsegment 
 
     marker UpperBar
@@ -31,7 +32,7 @@ endsegment
 
 segment Seg1
     parent UpperBar 
-    rt 0 0 0 xyz 1.2 0 0
+    rt 0 0 0 xyz 1.2 0 0 
     translations	z
     rotations	x
     ranges
@@ -88,7 +89,6 @@ endsegment
         position 0 0 -0.5
     endmarker
 
-
 segment Seg3
     parent Seg2
     rotations	x
@@ -96,13 +96,13 @@ segment Seg3
     rt 0 0 0 xyz 0 0 -0.5
     ranges
         -pi/2 pi/2
-    mass 1
+    mass 2
     inertia
         0.0391  0.0000	0.0000
 	    0.0000	0.0335	-0.0032
 	    0.0000	-0.0032	0.0090
-    com  -0.00025 0.0344 -0.4771
-    meshfile mesh/half_pendulum.STL
+    com  -0.0005 0.0688 -0.9542
+    meshfile mesh/pendulum.STL
     endsegment
 
     // Marker 5
@@ -114,7 +114,7 @@ segment Seg3
     // Marker 6
     marker marker_6
         parent Seg3
-        position 0 0 -0.55
+        position 0 0 -1.1
     endmarker
 
 
