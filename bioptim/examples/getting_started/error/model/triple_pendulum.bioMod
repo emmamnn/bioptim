@@ -1,0 +1,121 @@
+version 4
+
+segment Ground
+    rt 0 0 0 xyz 0 0 0
+endsegment
+
+
+segment LowerBar 
+    parent Ground 
+    rt 0 0 0 xyz 0 0 1.55
+    mesh 0 0 0 
+    mesh 2.4 0 0 
+endsegment 
+
+
+    marker LowerBarMarker
+        parent LowerBar
+    endmarker
+
+
+segment UpperBar
+    parent Ground
+    rt 0 0 0 xyz 0 1.62 2.35 
+    mesh 0 0 0 
+    mesh 2.4 0 0 
+endsegment 
+
+    marker UpperBar
+        parent UpperBar
+    endmarker
+
+segment Seg1
+    parent UpperBar 
+    rt 0 0 0 xyz 1.2 0 0
+    translations	z
+    rotations	x
+    ranges
+        -1 1
+        -10*pi 10*pi
+    mass 1
+    inertia
+        0.0391  0.0000	0.0000
+	    0.0000	0.0335	-0.0032
+	    0.0000	-0.0032	0.0090
+    com  -0.00025 0.0344 -0.4771
+    meshfile mesh/half_pendulum.stl
+endsegment
+
+
+
+    // Marker 1
+    marker marker_1
+        parent Seg1
+        position 0 0 0
+    endmarker
+
+    // Marker 2
+    marker marker_2
+        parent Seg1
+        position 0 0 -0.5
+    endmarker
+
+segment Seg2
+    parent Seg1
+    rotations	x
+    rtinmatrix 0
+    rt 0 0 0 xyz 0 0 -0.5
+    ranges
+        -pi/2 pi/2
+    mass 1
+    inertia
+        0.0391  0.0000	0.0000
+	    0.0000	0.0335	-0.0032
+	    0.0000	-0.0032	0.0090
+    com  -0.00025 0.0344 -0.4771
+    meshfile mesh/half_pendulum.STL 
+endsegment
+
+    // Marker 3
+    marker marker_3
+        parent Seg2
+        position 0 0 0
+    endmarker
+
+    // Marker 4
+    marker marker_4
+        parent Seg2
+        position 0 0 -0.5
+    endmarker
+
+
+segment Seg3
+    parent Seg2
+    rotations	x
+    rtinmatrix 0
+    rt 0 0 0 xyz 0 0 -0.5
+    ranges
+        -pi/2 pi/2
+    mass 1
+    inertia
+        0.0391  0.0000	0.0000
+	    0.0000	0.0335	-0.0032
+	    0.0000	-0.0032	0.0090
+    com  -0.00025 0.0344 -0.4771
+    meshfile mesh/half_pendulum.STL
+    endsegment
+
+    // Marker 5
+    marker marker_5
+        parent Seg3
+        position 0 0 0
+    endmarker
+
+    // Marker 6
+    marker marker_6
+        parent Seg3
+        position 0 0 -0.55
+    endmarker
+
+
+
