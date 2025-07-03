@@ -1,19 +1,19 @@
 version 4
-segment Barre 
-	rt 0 0 0 xyz 0 0 0 //position de la barre 
+
+segment UpperBar
+    rt 0 0 0 xyz 0 1.62 2.35 
+    mesh 0 0 0
+    mesh 2.4 0 0
 endsegment 
 
-//segment RightHand
-//	parent Barre 
-//	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.1 //position par rapport au parent 
-//endsegment
+
+
+
 
 
 segment RightHandRotationX
-	//parent RightHand
-	//rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.1 
-	parent Barre
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.0
+	parent UpperBar
+	rt 0.0 0.0 0.0 xyz 1.2 0.0 0.0
 	rotations x
 	rangesQ
 		-4*pi 4*pi  	
