@@ -2,13 +2,8 @@ version 4
 
 gravity 0 0 -9.81
 
-segment Ground
-    rt 0 0 0 xyz 0 0 0
-endsegment
 
-
-segment LowerBar 
-    parent Ground 
+segment LowerBar
     rt 0 0 0 xyz 0 0 1.55
     mesh 0 0 0 
     mesh 2.4 0 0 
@@ -22,7 +17,6 @@ endsegment
 
 
 segment UpperBar
-    parent Ground
     rt 0 0 0 xyz 0 1.62 2.35 
     mesh 0 0 0
     mesh 2.4 0 0
@@ -37,6 +31,8 @@ segment HandsRotations
 	parent UpperBar
 	rt 0 0 0 xyz 1.2 0 0 
 	rotations x
+	rangesQ
+		-2*pi 2*pi
 endsegment 
 
 
@@ -49,14 +45,16 @@ segment HandsPosition
 		0.0009022465368776878 0.0 0.0
 		0.0 0.012402784480396958 0.0
 		0.0 0.0 0.011624175734125972
-	meshfile Model_mesh/main_modif.stl
+	meshfile Model_mesh/main_modif.STL
 	meshrt 0 0 0 xyz -0.192053 -0.054101 -0.144217
 endsegment
 
 segment WristRotations 
 	parent HandsPosition
 	rt 0 0 0 xyz 0 0 0 
-	rotations x 
+	rotations x
+	rangesQ
+		-pi/2 pi/2
 endsegment
 
 segment Forearms
@@ -68,33 +66,37 @@ segment Forearms
 		0.008730505622941635 0.0 0.0
 		0.0 0.039545987225566424 0.0
 		0.0 0.0 0.03168842470089177
-	meshfile Model_mesh/avantbras_modif.stl
+	meshfile Model_mesh/avantbras_modif.STL
 	meshrt 0 0 0 xyz -0.183056 -0.044980 -0.22749999999999998
 endsegment
 
 segment ElbowRotation
 	parent Forearms
 	rt 0 0 0 xyz 0 0 0
-	rotations x 
-endsegment 
+	rotations x
+	rangesQ
+		-pi pi
+endsegment
 
 segment UpperArms
 	parent ElbowRotation
-	rt 0.0 0.0 0.0 xyz 0.0 0 0.259579 
+	rt 0.0 0.0 0.0 xyz 0.0 0 0.259579
 	com 0.0 0.0 -0.12339902278497733
 	mass 3.053884275655435
 	inertia
 		0.017731207652583694 0.0 0.0
 		0.0 0.0758893797981658 0.0
 		0.0 0.0 0.06091595377637793
-	meshfile Model_mesh/bras_modif.stl
-	meshrt 0 0 0 xyz -0.185502 -0.047833 -0.259579 
+	meshfile Model_mesh/bras_modif.STL
+	meshrt 0 0 0 xyz -0.185502 -0.047833 -0.259579
 endsegment
 
 segment ShoulderRotations 
 	parent UpperArms
 	rt 0 0 0 xyz 0 0 0 
-	rotations xy 
+	rotations x
+	rangesQ
+		-pi pi  
 endsegment
 
 segment Thorax
@@ -108,125 +110,4 @@ segment Thorax
 		0.0 0.0 0.12267663133066603
 	meshfile Model_mesh/thorax.stl
 	meshrt -.15 0 0 xyz 0 -.025 0
-endsegment
-
-segment Head
-	parent Thorax
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 0.321
-	com 0.0 0.0 0.14410504323581402
-	mass 4.790166218018207
-	inertia
-		0.033529266486764325 0.0 0.0
-		0.0 0.033529266486764325 0.0
-		0.0 0.0 0.012779140226203023
-	meshfile Model_mesh/tete.stl
-	meshrt 0 0 pi xyz 0 0 0
-endsegment
-
-
-segment PelvisRotations
-	parent Thorax
-	rt 0 0 0 xyz 0 0 0
-	rotations xy
-endsegment
-
-
-segment Pelvis
-	parent PelvisRotations
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.09903629669326643 //position thorax/pelvis inversée 
-	com 0.0 0.0 0.0
-	mass 9.89421385998868
-	inertia
-		0.05848712898828999 0.0 0.0
-		0.0 0.08089906353329981 0.0
-		0.0 0.0 0.0824214500611078
-	meshfile Model_mesh/pelvis.stl
-	meshrt -.175 0 0 xyz 0 0 0
-endsegment
-
-segment RightThigh
-	parent Pelvis
-	rt 0.0 0.0 0.0 xyz -0.07850000000000001 0.0 -0.09396370330673358
-	rotations xy
-	rangesQ
-		-.3 2.7
-		-.35 0.35
-	com 0.0 0.0 -0.17423008338339324
-	mass 8.750468855947314
-	inertia
-		0.12308151205164959 0.0 0.0
-		0.0 0.12308151205164959 0.0
-		0.0 0.0 0.03174708475559291
-	meshfile Model_mesh/thigh.stl
-endsegment
-
-segment RightShank
-	parent RightThigh
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.387
-	rotations x 
-	com 0.0 0.0 -0.16906452193276242
-	mass 3.235027750425491
-	inertia
-		0.041541588346640027 0.0 0.0
-		0.0 0.041541588346640027 0.0
-		0.0 0.0 0.004620921782760292
-	meshfile Model_mesh/leg_right.stl
-	meshrt 0 0.09 0 xyz 0 0 0
-endsegment
-
-
-segment RightFoot
-	parent RightShank
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
-	rotations x 
-	com 0.0 0.0 -0.06776112120416113
-	mass 0.6906250348530587
-	inertia
-		0.0015466483069131232 8.256759586238227e-21 0.0
-		8.256759586238227e-21 0.0014486158659897128 0.0
-		0.0 0.0 0.0004953579319371067
-	meshfile Model_mesh/foot.stl
-endsegment
-
-segment LeftThigh
-	parent Pelvis
-	rt 0.0 0.0 0.0 xyz 0.07850000000000001 0.0 -0.09396370330673358
-	rotations xy
-	rangesQ
-		-.3 2.7
-		-.35 0.35
-	com 0.0 0.0 -0.17423008338339324
-	mass 8.750468855947314
-	inertia
-		0.12308151205164959 0.0 0.0
-		0.0 0.12308151205164959 0.0
-		0.0 0.0 0.03174708475559291
-	meshfile Model_mesh/thigh.stl
-endsegment
-
-segment LeftShank
-	parent LeftThigh
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.387
-	rotations x
-	com 0.0 0.0 -0.16906452193276242
-	mass 3.235027750425491
-	inertia
-		0.041541588346640027 0.0 0.0
-		0.0 0.041541588346640027 0.0
-		0.0 0.0 0.004620921782760292
-	meshfile Model_mesh/leg_left.stl
-	meshrt 0 -0.09 0 xyz 0 0 0
-endsegment
-
-segment LeftFoot
-	parent LeftShank
-	rt 0.0 0.0 0.0 xyz 0.0 0.0 -0.3535000000000001
-	rotations x 
-	com 0.0 0.0 -0.06776112120416113
-	mass 0.6906250348530587
-	inertia
-		0.0015466483069131232 8.256759586238227e-21 0.0
-		8.256759586238227e-21 0.0014486158659897128 0.0
-		0.0 0.0 0.0004953579319371067
-	meshfile Model_mesh/foot.stl
 endsegment
