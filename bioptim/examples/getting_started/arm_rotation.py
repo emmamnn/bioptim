@@ -8,6 +8,7 @@ This simple example is a good place to start investigating bioptim as it describ
 During the optimization process, the graphs are updated real-time (even though it is a bit too fast and short to really
 appreciate it). Finally, once it finished optimizing, it animates the model using the optimal solution
 """
+import numpy as np
 
 from bioptim import (
     OptimalControlProgram,
@@ -25,6 +26,8 @@ from bioptim import (
     ControlType,
     PhaseDynamics,
     OnlineOptim,
+    ObjectiveList,
+    
 )
 
 
@@ -76,7 +79,9 @@ def prepare_ocp(
     bio_model = BiorbdModel(biorbd_model_path)
 
     # Add objective functions
-    objective_functions = Objective(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau")
+    objective_functions = ObjectiveList()
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=1 )
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=0.001, min_bound=0, max_bound=np.inf)
 
     # Dynamics
     #dynamics = Dynamics(
@@ -92,12 +97,13 @@ def prepare_ocp(
     #x_bounds["q"][:,0] = 3.14
     #x_bounds["q"][:,-1] = 0
 
-    x_bounds["q"][0, 0] = 0  # Position initiale 
-    x_bounds["q"][0, -1] = 3.14  # Rotation finale de 180° 
+    x_bounds["q"][:, 0] = 0  # Position initiale 
+    x_bounds["q"][:,-1] = 0 
+    x_bounds["q"][0, -1] = 2*np.pi  # Rotation finale de 180° 
 
 
     x_bounds["qdot"] = bio_model.bounds_from_ranges("qdot")
-    x_bounds["qdot"][:, [0, -1]] = 0  # Start and end without any velocity
+    #x_bounds["qdot"][:, [0, -1]] = 0  # Start and end without any velocity
 
     # Initial guess (optional since it is 0, we show how to initialize anyway)
     x_init = InitialGuessList()
@@ -135,93 +141,29 @@ def main():
     If pendulum is run as a script, it will perform the optimization and animates it
     """
 
+    RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/"
+
     # --- Prepare the ocp --- #
-    ocp = prepare_ocp(biorbd_model_path="C:/Users/emmam/Documents/INSA Rennes/MA/Stage math et sports acrobatiques/test_bioptim/models/test_rotation.bioMod", final_time=1, n_shooting=50, n_threads=2)
+    ocp = prepare_ocp(biorbd_model_path=RAC + "models/female1_racine_main_armMerged.bioMod", final_time=1, n_shooting=50, n_threads=2)
 
     # --- Live plots --- #
     ocp.add_plot_penalty(CostType.ALL)  # This will display the objectives and constraints at the current iteration
-    # ocp.add_plot_check_conditioning()  # This will display the conditioning of the problem at the current iteration
-    # ocp.add_plot_ipopt_outputs()  # This will display the solver's output at the current iteration
 
-    # --- Saving the solver's output during the optimization --- #
-    # path_to_results = "temporary_results/"
-    # result_file_name = "pendulum"
-    # nb_iter_save = 10  # Save the solver's output every 10 iterations
-    # ocp.save_intermediary_ipopt_iterations(
-    #     path_to_results, result_file_name, nb_iter_save
-    # )  # This will save the solver's output at each iteration
-
-    # --- If one is interested in checking the conditioning of the problem, they can uncomment the following line --- #
-    #ocp.check_conditioning()
 
     # --- Print ocp structure --- #
     ocp.print(to_console=False, to_graph=False)
 
-    # --- Solve the ocp --- #
-    # Default is OnlineOptim.MULTIPROCESS on Linux, OnlineOptim.MULTIPROCESS_SERVER on Windows and None on MacOS
-    # To see the graphs on MacOS, one must run the server manually (see resources/plotting_server.py)
-    
-    sol = ocp.solve(Solver.IPOPT(online_optim=OnlineOptim.MULTIPROCESS_SERVER))
-    #sol = ocp.solve(Solver.IPOPT())
+    # --- Solve the ocp --- #   
+    solver = Solver.IPOPT(online_optim=OnlineOptim.DEFAULT,_linear_solver="ma57")      
+    sol = ocp.solve(solver)
 
     # --- Show the results graph --- #
     sol.print_cost()
-    # sol.graphs(show_bounds=True, save_name="results.png")
 
     # --- Animate the solution --- #
-    viewer = "bioviz"
-    # viewer = "pyorerun"
+    #viewer = "bioviz"
+    viewer = "pyorerun"
     sol.animate(n_frames=0, viewer=viewer, show_now=True)
-
-
-
-
-    # # --- Saving the solver's output after the optimization --- #
-    # Here is an example of how we recommend to save the solution. Please note that sol.ocp is not picklable and that sol will be loaded using the current bioptim version, not the version at the time of the generation of the results.
-    # import pickle
-    # import git
-    # from datetime import date
-    #
-    # # Save the version of bioptim and the date of the optimization for future reference
-    # repo = git.Repo(search_parent_directories=True)
-    # commit_id = str(repo.commit())
-    # branch = str(repo.active_branch)
-    # tag = repo.git.describe("--tags")
-    # bioptim_version = repo.git.version_info
-    # git_date = repo.git.log("-1", "--format=%cd")
-    # version_dic = {
-    #     "commit_id": commit_id,
-    #     "git_date": git_date,
-    #     "branch": branch,
-    #     "tag": tag,
-    #     "bioptim_version": bioptim_version,
-    #     "date_of_the_optimization": date.today().strftime("%b-%d-%Y-%H-%M-%S"),
-    # }
-    #
-    # q = sol.decision_states(to_merge=SolutionMerge.NODES)["q"]
-    # qdot = sol.decision_states(to_merge=SolutionMerge.NODES)["qdot"]
-    # tau = sol.decision_controls(to_merge=SolutionMerge.NODES)["tau"]
-    #
-    # # Do everything you need with the solution here before we delete ocp
-    # integrated_sol = sol.integrate(to_merge=SolutionMerge.NODES)
-    # q_integrated = integrated_sol["q"]
-    # qdot_integrated = integrated_sol["qdot"]
-    #
-    # # Save the output of the optimization
-    # with open("pendulum_data.pkl", "wb") as file:
-    #     data = {"q": q,
-    #             "qdot": qdot,
-    #             "tau": tau,
-    #             "real_time_to_optimize": sol.real_time_to_optimize,
-    #             "version": version_dic,
-    #             "q_integrated": q_integrated,
-    #             "qdot_integrated": qdot_integrated}
-    #     pickle.dump(data, file)
-    #
-    # # Save the solution for future use, you will only need to do sol.ocp = prepare_ocp() to get the same solution object as above.
-    # with open("pendulum_sol.pkl", "wb") as file:
-    #     del sol.ocp
-    #     pickle.dump(sol, file)
 
 
 if __name__ == "__main__":
