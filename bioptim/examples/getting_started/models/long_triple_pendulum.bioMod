@@ -1,5 +1,7 @@
 version 4
 
+gravity 0 0 -9.81
+
 segment Ground
     rt 0 0 0 xyz 0 0 0
 endsegment
@@ -36,9 +38,9 @@ segment Seg1
     translations	z
     rotations	x
     ranges
-        -1 1
+        -0.5 0.5
         -10*pi 10*pi
-    mass 1
+    mass 2
     inertia
         0.0391  0.0000	0.0000
 	    0.0000	0.0335	-0.0032
@@ -68,13 +70,13 @@ segment Seg2
     rt 0 0 0 xyz 0 0 -0.5
     ranges
         -pi/2 pi/2
-    mass 1
+    mass 4
     inertia
         0.0391  0.0000	0.0000
 	    0.0000	0.0335	-0.0032
 	    0.0000	-0.0032	0.0090
-    com  -0.00025 0.0344 -0.4771
-    meshfile mesh/half_pendulum.STL 
+    com  -0.0005 0.0688 -0.9542
+    meshfile mesh/pendulum.STL
 endsegment
 
     // Marker 3
@@ -86,24 +88,24 @@ endsegment
     // Marker 4
     marker marker_4
         parent Seg2
-        position 0 0 -0.5
+        position 0 0 -1
     endmarker
 
 segment Seg3
     parent Seg2
     rotations	x
-    rtinmatrix 0
-    rt 0 0 0 xyz 0 0 -0.5
+    rt 0 0 0 xyz 0 0 -1
     ranges
-        -pi/2 pi/2
+        -1 1
+        -10*pi 10*pi
     mass 2
     inertia
         0.0391  0.0000	0.0000
 	    0.0000	0.0335	-0.0032
 	    0.0000	-0.0032	0.0090
-    com  -0.0005 0.0688 -0.9542
-    meshfile mesh/pendulum.STL
-    endsegment
+    com  -0.00025 0.0344 -0.4771
+    meshfile mesh/half_pendulum.stl
+endsegment
 
     // Marker 5
     marker marker_5
@@ -114,7 +116,7 @@ segment Seg3
     // Marker 6
     marker marker_6
         parent Seg3
-        position 0 0 -1.1
+        position 0 0 -0.55
     endmarker
 
 
