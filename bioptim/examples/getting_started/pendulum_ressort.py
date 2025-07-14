@@ -212,7 +212,7 @@ def prepare_ocp(
 
     x_bounds[0]["q"][:, 0] = 0
     x_bounds[0]["q"][1, 0] = -np.pi #start 180 degrees rotated 
-    x_bounds[0]["qdot"][:, [0, -1]] = 0 #speeds start and end at 0
+    x_bounds[0]["qdot"][:, 0] = 0 #speeds start at 0
     
     x_bounds[1]["q"][:, -1] = 0
     x_bounds[1]["q"][1,-1] = np.pi #ends with first pendulum 180 degrees rotated
@@ -220,7 +220,7 @@ def prepare_ocp(
 
 
     # Define control path bounds
-    tau_min, tau_max = (-100, 100)
+    tau_min, tau_max = (-500, 500)
     n_tau = bio_model[0].nb_tau
     u_bounds = BoundsList()
     u_bounds.add("tau", min_bound=[tau_min] * bio_model[0].nb_tau, max_bound=[tau_max] * bio_model[0].nb_tau, phase=0)
@@ -233,6 +233,7 @@ def prepare_ocp(
         x_init.add("qdot", [0] * bio_model[0].nb_qdot, phase=0)
         x_init.add("q", [0] * bio_model[0].nb_q, phase=1)
         x_init.add("qdot", [0] * bio_model[0].nb_qdot, phase=1)
+
         
     if u_init == None:
         u_init = InitialGuessList()
@@ -260,36 +261,40 @@ def prepare_ocp(
 def main():
     import os 
     import pickle
+    
+    
     RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/"
     
-    # # --- to start from the solution without constraint --- #
-    # path = "../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/results/"
-    # with open(os.path.join(path, "pendulum_data_100_shooting.pkl"), "rb") as file:
-    #     sol_without_constraint = pickle.load(file)
+    # --- to start from the solution without constraint --- #
+    path = "../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/results/"
+    
+    n_shooting = (20, 85)
+    
+    with open(os.path.join(path, "2light_pendulum_sol.pkl"), "rb") as file:
+        prev_sol_data = pickle.load(file)
 
-    # q_init = sol_without_constraint["q"]
-    # qdot_init = sol_without_constraint["qdot"]
-    # tau_init = sol_without_constraint["tau"]
-
+    qs = prev_sol_data["q"]
+    qdots = prev_sol_data["qdot"]
+    taus = prev_sol_data["tau"]
+    n0, n1 = n_shooting[0] + 1, n_shooting[1] + 1 
+    
     # # Initial guess with InterpolationType.EACH_FRAME
-    # x_init = InitialGuessList()
-    # x_init.add("q", q_init, interpolation=InterpolationType.EACH_FRAME)
-    # x_init.add("qdot", qdot_init, interpolation=InterpolationType.EACH_FRAME)
+    x_init = InitialGuessList()
+    x_init.add("q", qs[:,:n0], interpolation=InterpolationType.EACH_FRAME, phase = 0)
+    x_init.add("q", qs[:,n0:], interpolation=InterpolationType.EACH_FRAME, phase = 1)
+    x_init.add("qdot", qdots[:,:n0], interpolation=InterpolationType.EACH_FRAME, phase = 0)
+    x_init.add("qdot", qdots[:,n0:], interpolation=InterpolationType.EACH_FRAME, phase = 1)
 
-    # u_init = InitialGuessList()
-    # u_init.add("tau", tau_init, interpolation=InterpolationType.EACH_FRAME)
-    
-    
-    # --- Prepare the ocp --- #
-    n_shooting = (25, 75)
-    # use_sol_init = False
-    
-    # if use_sol_init == True:
-    #     ocp = prepare_ocp(biorbd_model_path=RAC + "models/long_triple_pendulum.bioMod", final_time=(1,3), n_shooting=n_shooting,min_time=0.5, max_time=10, weight=0.0001, n_threads=1, u_init=u_init, x_init=x_init)
-    # else:
-    #     ocp = prepare_ocp(biorbd_model_path=RAC + "models/long_triple_pendulum.bioMod", final_time=(1,3), n_shooting=n_shooting,min_time=0.5, max_time=10, weight=0.0001, n_threads=1)
-    ocp = prepare_ocp(biorbd_model_path=RAC + "models/long_triple_pendulum.bioMod", final_time=(1,3), n_shooting=n_shooting,min_time=0.02, max_time=4, weight=0.001, n_threads=2)
+    u_init = InitialGuessList()
+    u_init.add("tau", taus[:,:n0-1], interpolation=InterpolationType.EACH_FRAME, phase = 0)
+    u_init.add("tau", taus[:,n0-1:], interpolation=InterpolationType.EACH_FRAME, phase = 1)
 
+    
+    
+    print("prepare ocp")
+    # ocp = prepare_ocp(biorbd_model_path=RAC + "models/long_triple_pendulum.bioMod", final_time=(1,3), n_shooting=n_shooting,min_time=0.02, max_time=4, weight=0.0001, n_threads=1)
+    ocp = prepare_ocp(biorbd_model_path=RAC + "models/long_triple_pendulum.bioMod", final_time=(1,3), n_shooting=n_shooting,min_time=0.02, max_time=4, weight=0.0001, n_threads=1, u_init=u_init, x_init=x_init)
+    print("ocp ready")
 
 
     # --- Live plots --- #
@@ -298,73 +303,79 @@ def main():
     # --- Print ocp structure --- #
     ocp.print(to_console=False, to_graph=False)
 
-
-    # --- Saving the solver's output during the optimization --- #
-    # path_to_results = RAC + "results/"
-    # result_file_name = "pendulum"
-    # nb_iter_save = 10  # Save the solver's output every 10 iterations
-    # ocp.save_intermediary_ipopt_iterations(
-    #     path_to_results, result_file_name, nb_iter_save
-    # )
-
     # --- Solve the ocp --- #   
-    solver = Solver.IPOPT(online_optim=OnlineOptim.DEFAULT,_linear_solver="ma57")      
+    solver = Solver.IPOPT()
+    solver.set_linear_solver("ma57")
+    solver.set_maximum_iterations(10000)
+    print("start solving")      
     sol = ocp.solve(solver)
+    print("solving finished")
     
     
-    # q = sol.decision_states(to_merge=[SolutionMerge.NODES, SolutionMerge.PHASES])["q"][0]
-    # qdot = sol.decision_states(to_merge=[SolutionMerge.NODES, SolutionMerge.PHASES])["qdot"][0]
-    # tau = sol.decision_controls(to_merge=[SolutionMerge.NODES, SolutionMerge.PHASES])["tau"][0]
+    # q = sol.decision_states(to_merge=[SolutionMerge.NODES])["q"]
+    # qdot = sol.decision_states(to_merge=[SolutionMerge.NODES, SolutionMerge.PHASES])["qdot"]
+    # tau = sol.decision_controls(to_merge=[SolutionMerge.NODES, SolutionMerge.PHASES])["tau"]
+    
+    # states = sol.decision_states(to_merge=[SolutionMerge.NODES])  # Liste de dictionnaires par phase
 
-    
-    # # --- Save the solution --- #
-    # save = False 
+    qs = sol.decision_states(to_merge=[SolutionMerge.NODES])[0]['q']
+    qdots = sol.decision_states(to_merge=[SolutionMerge.NODES])[0]['qdot']
+    for i in range(1, len(sol.decision_states(to_merge=[SolutionMerge.NODES]))):
+        qs = np.hstack((qs, sol.decision_states(to_merge=[SolutionMerge.NODES])[i]['q']))
+        qdots = np.hstack((qdots, sol.decision_states(to_merge=[SolutionMerge.NODES])[i]['qdot']))
 
-    # if save == True :
+
+    taus = sol.decision_controls(to_merge=[SolutionMerge.NODES])[0]['tau']
+  
+    for i in range(1, len(sol.decision_controls(to_merge=[SolutionMerge.NODES]))):
+        taus = np.hstack((taus, sol.decision_controls(to_merge=[SolutionMerge.NODES])[i]['tau']))
+        
+    # --- Save the solution --- #
+    save = True 
+
+    if save == True :
         # q = sol.decision_states(to_merge=SolutionMerge.NODES)["q"]
         # qdot = sol.decision_states(to_merge=SolutionMerge.NODES)["qdot"]
         # tau = sol.decision_controls(to_merge=SolutionMerge.NODES)["tau"]
         
-    #     # Do everything you need with the solution here before we delete ocp
-    #     integrated_sol = sol.integrate(to_merge=SolutionMerge.NODES)
-    #     q_integrated = integrated_sol["q"]
-    #     qdot_integrated = integrated_sol["qdot"]
+        # # Do everything you need with the solution here before we delete ocp
+        # integrated_sol = sol.integrate(to_merge=SolutionMerge.NODES)
+        # q_integrated = integrated_sol["q"]
+        # qdot_integrated = integrated_sol["qdot"]
         
-    #     # Récupération des coûts
-    #     # Accès à la structure détaillée
-    #     detailed_cost = sol.detailed_cost
+        # # Récupération des coûts
+        # # Accès à la structure détaillée
+        # detailed_cost = sol.detailed_cost
 
-    #     # Récupérer le coût pondéré et non pondéré pour chaque terme
-    #     lagrange_cost_weighted = next(item for item in sol.detailed_cost if item["name"] == "Lagrange.MINIMIZE_CONTROL")["cost_value_weighted"]
-    #     lagrange_cost_unweighted = next(item for item in sol.detailed_cost if item["name"] == "Lagrange.MINIMIZE_CONTROL")["cost_value"]
+        # # Récupérer le coût pondéré et non pondéré pour chaque terme
+        # lagrange_cost_weighted = next(item for item in sol.detailed_cost if item["name"] == "Lagrange.MINIMIZE_CONTROL")["cost_value_weighted"]
+        # lagrange_cost_unweighted = next(item for item in sol.detailed_cost if item["name"] == "Lagrange.MINIMIZE_CONTROL")["cost_value"]
 
-    #     mayer_cost_weighted = next(item for item in sol.detailed_cost if item["name"] == "Mayer.MINIMIZE_TIME")["cost_value_weighted"]
-    #     mayer_cost_unweighted = next(item for item in sol.detailed_cost if item["name"] == "Mayer.MINIMIZE_TIME")["cost_value"]
+        # mayer_cost_weighted = next(item for item in sol.detailed_cost if item["name"] == "Mayer.MINIMIZE_TIME")["cost_value_weighted"]
+        # mayer_cost_unweighted = next(item for item in sol.detailed_cost if item["name"] == "Mayer.MINIMIZE_TIME")["cost_value"]
 
-    #     path = "../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/results/"
+        path = "../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/results/"
         
-    #     #Save the output of the optimization
-    #     with open(os.path.join(path, "pendulum_data_100_shooting_start_constraint.pkl"), "wb") as file:
-    #         data = {"q": q,
-    #                 "qdot": qdot,
-    #                 "tau": tau,
-    #                 "cost": sol.cost,
-    #                 "real_time_to_optimize": sol.real_time_to_optimize,
-    #                 "q_integrated": q_integrated,
-    #                 "qdot_integrated": qdot_integrated,
-    #                 "lagrange_control_cost": lagrange_cost_weighted,
-    #                 "mayer_time_cost": mayer_cost_weighted,
-    #                 "lagrange_control_cost_unweighted": lagrange_cost_unweighted,
-    #                 "mayer_time_cost_unweighted": mayer_cost_unweighted,
-    #                 "n_shooting" : n_shooting}
-    #         pickle.dump(data, file)
+        #Save the output of the optimization
+        with open(os.path.join(path, "2light_pendulum_sol.pkl"), "wb") as file:
+            data = {"q":qs,  # Liste des q par phase
+                    "qdot": qdots,
+                    "tau": taus,
+                    # "state": states,
+                    # "cost": sol.cost,
+                    # "real_time_to_optimize": sol.real_time_to_optimize,
+                    # "q_integrated": q_integrated,
+                    # "qdot_integrated": qdot_integrated,
+                    # "lagrange_control_cost": lagrange_cost_weighted,
+                    # "mayer_time_cost": mayer_cost_weighted,
+                    # "lagrange_control_cost_unweighted": lagrange_cost_unweighted,
+                    # "mayer_time_cost_unweighted": mayer_cost_unweighted,
+                    # "n_shooting" : n_shooting
+                    }
+            pickle.dump(data, file)
         
-    #     # # # Save the solution for future use, you will only need to do sol.ocp = prepare_ocp() to get the same solution object as above.
-    #     # # with open(os.path.join(path,"pendulum_sol.pkl"), "wb") as file:
-    #     # #      del sol.ocp
-    #     # #      pickle.dump(sol, file)
             
-    #     print("Fichiers sauvegardés dans :", os.getcwd())
+        print("Fichiers sauvegardés dans :", os.getcwd())
         
     # --- Animate the solution --- #
     #viewer = "bioviz"
