@@ -4,6 +4,7 @@ import numpy as np
 def parse_biomod(filepath):
     with open(filepath, "r") as f:
         lines = f.readlines()
+        f.close()
 
     segments = []
     current_segment = None
@@ -25,6 +26,7 @@ def parse_biomod(filepath):
             inside_segment = False
         elif inside_segment:
             current_segment["content"].append(line)
+    
 
     return segments
 
@@ -65,6 +67,31 @@ def add_bar_segments(segments):
     ]
 
     return bar_segments + segments
+
+def add_last_marker(segments):
+    """Add last marker to the model"""
+    MarkerR = [{"name": "MarkerR",
+            "content": [
+                "\tmarker MarkerR\n",
+                "\t\tparent RightFoot\n",
+                "\t\tposition 0 0.033 -0.2\n",
+                "\tendmarker\n",
+                "\n"
+            ]
+        } ]
+    MarkerL = [{"name": "MarkerL",
+            "content": [
+                "\tmarker MarkerL\n",
+                "\t\tparent LeftFoot\n",
+                "\t\tposition 0 0.033 -0.2\n",
+                "\tendmarker\n",
+                "\n"
+            ]
+        }]
+
+    return segments + MarkerR + MarkerL
+
+    return segments + last_marker
 
 def reorder_segment(segments, new_order, new_parents):
     segment_dict = {seg['name']: seg['content'] for seg in segments}
@@ -111,8 +138,6 @@ def reorder_segment(segments, new_order, new_parents):
     return reordered
 
 
-
-
 def write_biomod(filepath, segments, header_lines=None):
     with open(filepath, "w") as f:
         if header_lines:
@@ -121,6 +146,7 @@ def write_biomod(filepath, segments, header_lines=None):
         for seg in segments:
             f.writelines(seg["content"])
             f.write("\n")
+        f.close()
 
 import math
 
@@ -133,6 +159,7 @@ def split_rot_and_position(segments, targets):
         "Forearms": "WristRotation",
         "UpperArms": "ElbowRotation",
         "Thorax": "ShoulderRotation",
+        "Pelvis": "BackRotation",
     }
 
     # 1. Mapping nom → parent
@@ -147,6 +174,8 @@ def split_rot_and_position(segments, targets):
 
 
     # 2. Stocker z initiaux
+    HandsMeshScale = [1, 1, 1]
+    
     for seg in segments:
         name = seg["name"]
         for line in seg["content"]:
@@ -209,23 +238,31 @@ def split_rot_and_position(segments, targets):
                 inertia_lines.append(line)
             elif len(inertia_lines) > 0 and len(inertia_lines) < 4:
                 inertia_lines.append(line)
-            elif stripped.startswith("meshfile") or stripped.startswith("meshrt"):
+            elif stripped.startswith("meshfile") or stripped.startswith("meshrt") or stripped.startswith("meshscale"):
                 mesh_lines.append(line)
+            
+            if name == "Hands" and stripped.startswith("meshscale"):
+                scale_values = list(map(float, stripped.split()[1:]))
+                HandsMeshScale = np.array(scale_values)
 
         # ==== Nouveau rt ====
         rt_x, rt_y, rt_z = 0.0, 0.0, 0.0
         rx, ry, rz = 0.0, 0.0, 0.0
 
+        HandsMeshSize = 0.16 
+
         if name == "Hands":
-            # HandsPosition : z = -COM (z du COM)
-            z_com = float(com_line.strip().split()[-1])
-            rz = -z_com
+            # HandsPosition : z = lenght of the hands (to be set on the bar)
+            rz = HandsMeshSize * HandsMeshScale[2]
         elif name == "Forearms":
-            rz = -old_rt_z.get("Hands", 0)
+            # z = length of the hands
+            rz = HandsMeshSize * HandsMeshScale[2]
         elif name == "UpperArms":
-            rz = -old_rt_z.get("Forearms", 0)
+            # z = old z hands (length of the forearms)
+            rz = -old_rt_z.get("Hands", 0)
         elif name == "Thorax":
-            rz = old_rt_z.get("UpperArms", 0)
+            # z = old z forearms (length of the upper arms)
+            rz = -old_rt_z.get("Forearms", 0)
             rt_y = "pi"  
         elif name == "Pelvis":
             rz = -old_rt_z.get("Thorax", 0)
@@ -252,14 +289,11 @@ def split_rot_and_position(segments, targets):
     return new_segments
 
 
-
-
-
-
 def extract_header(filepath):
     """Get header of thhe file"""
     with open(filepath, "r") as f:
         lines = f.readlines()
+        f.close()
 
     header_lines = []
     for line in lines:
@@ -268,27 +302,160 @@ def extract_header(filepath):
         header_lines.append(line)
     return header_lines
 
-
-RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/models/" 
-
-
+def split_dof_list(dofs):
+    return [axis for group in dofs for axis in group]
 
 
-#new_order = ['Hands', 'Forearms', 'UpperArms', 'Thorax', 'Head', 'Pelvis', 'RightThigh', 'RightShank', 'RightFoot', 'LeftThigh', 'LeftShank', 'LeftFoot']
-new_order = ['Hands', 'Forearms', 'UpperArms', 'Thorax', 'Head', 'Pelvis', 'Thighs', 'Shanks', 'Feet']
+
+def update_dof_and_rangesQ(segments, dof_and_ranges):
+    updated_segments = []
+
+    for seg in segments:
+        name = seg["name"]
+        if name not in dof_and_ranges:
+            updated_segments.append(seg)
+            continue
+
+        info = dof_and_ranges[name]
+        ranges_iter = iter(info.get("rangesQ", []))
+        new_lines = []
+        i = 0
+
+        # 1. Supprimer toutes les lignes DoF existantes
+        while i < len(seg["content"]):
+            line = seg["content"][i]
+            stripped = line.strip()
+
+            if stripped.startswith(("translations", "rotations", "rangesQ")):
+                i += 1
+                # Skip all rangesQ values
+                while i < len(seg["content"]) and re.match(r"\s*-?\d+\.?\d*\s+-?\d+\.?\d*", seg["content"][i].strip()):
+                    i += 1
+                continue
+            else:
+                new_lines.append(line)
+                i += 1
+
+        # 2. Trouver où insérer (après la ligne rt)
+        insert_index = next(
+            (i for i, line in enumerate(new_lines) if line.strip().startswith("rt ")), len(new_lines) - 1
+        )
+        indent = re.match(r"^(\s*)", new_lines[insert_index]).group(1)
+
+        # 3. Créer nouvelles lignes DoF dans l'ordre voulu
+        insertion = []
+
+        translations = split_dof_list(info.get("translations", []))
+        rotations = split_dof_list(info.get("rotations", []))
+        all_dofs = translations + rotations
+
+        if "translations" in info:
+            insertion.append(f"{indent}translations {' '.join(info['translations'])}\n")
+        if "rotations" in info:
+            insertion.append(f"{indent}rotations {' '.join(info['rotations'])}\n")
+
+        if all_dofs:
+            insertion.append(f"{indent}rangesQ\n")
+            for _ in all_dofs:
+                try:
+                    min_val, max_val = next(ranges_iter)
+                    insertion.append(f"{indent}    {min_val} {max_val}\n")
+                except StopIteration:
+                    print(f"⚠️ Manque de rangesQ pour {name}")
+
+        # 4. Insertion dans le contenu du segment
+        new_lines = new_lines[:insert_index + 1] + insertion + new_lines[insert_index + 1:]
+
+        updated_segments.append({
+            "name": name,
+            "content": new_lines
+        })
+
+    return updated_segments
+
+
+
+
+# RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/examples/getting_started/models/new_models/" 
+# RAC="../../mnt/c/Users/emmam/Documents/GIT/bioptim/bioptim/models/merge/" 
+RAC = "examples/getting_started/models/new_models/"
+
+
+
+new_order = ['Hands', 'Forearms', 'UpperArms', 'Thorax', 'Head', 'Pelvis', 'RightThigh', 'LeftThigh', 'RightShank', 'LeftShank', 'RightFoot', 'LeftFoot']
+# new_order = ['Hands', 'Forearms', 'UpperArms', 'Thorax', 'Head', 'Pelvis', 'Thighs', 'Shanks', 'Feet']
 new_parents = {'Hands': 'UpperBar', 'Forearms': 'Hands', 'UpperArms': 'Forearms','Thorax': 'UpperArms', 'Pelvis': 'Thorax', 'Head': 'ThoraxPosition'}
 targets = ["Hands", "Forearms", "UpperArms", "Thorax", "Pelvis"]
+dof_and_rom = {
+    "HandsRotations": {
+        "translations" : ["yz"],
+        "rotations": ["x"],
+        "rangesQ": [(-0.1, 0.1), (-0.1, 0.1), ("-2*pi", "2*pi")]
+    },
+    "ElbowRotation": {
+        "rotations": ["x"],
+        "rangesQ": [(0, "2*pi/9")] #40°
+    },
+    "ShoulderRotation": {
+        "rotations": ["x"],
+        "rangesQ": [(0, "2*pi/9")] #0°, 40°
+    },
+    "Head": {
+        "rotations": ["x"],
+        "rangesQ": [("-pi/3", "5*pi/18")]  #-60° , 50°
+    },
+    "BackRotation": {
+        "rotations": ["x"],
+        "rangesQ": [("-pi/18", "5*pi/36")] #-10°, 25° 
+    },
+    "RightThigh": {
+        "rotations": ["xy"],
+        "rangesQ": [("-2*pi/9", "pi/6"), ("-pi/3", 0)] #-40°, 30° |-60° 0° 
+    },
+     "LeftThigh": {
+        "rotations": ["xy"],
+        "rangesQ": [("-2*pi/9", "pi/6"), (0, "pi/3")] #-40°, 30° |0° 60° 
+    },
+    "RightShank": {
+        "rotations": ["x"],
+        "rangesQ": [(0, "5*pi/6")]
+    },
+     "LeftShank": {
+        "rotations": ["x"],
+        "rangesQ": [(0, "5*pi/6")]
+    },
+    "LeftFoot": {
+        "rotations": ["x"],
+        "rangesQ": [("-pi/3", 0)] 
+    },
+    "RightFoot": {
+        "rotations": ["x"],
+        "rangesQ": [("-pi/3", 0)] 
+    },
+}
 
-segments = parse_biomod(RAC + "Athlete_10_armMerged.bioMod")
-reordered_segments = reorder_segment(segments, new_order, new_parents)
-split_segments = split_rot_and_position(reordered_segments, targets)
-segments_with_bar = add_bar_segments(split_segments)
+
+
+
+for number in range(8,9):
+    # number = 10
+    if number < 10:
+        number = f"0{number}"
+    filename = f"Athlete_{number}_armMerged_splitLegs.bioMod"
+    new_filename = f"Athlete_{number}_inverse.bioMod"
+
+    segments = parse_biomod(RAC + filename)
+    reordered_segments = reorder_segment(segments, new_order, new_parents)
+    split_segments = split_rot_and_position(reordered_segments, targets)
+    segments_with_bar = add_bar_segments(split_segments)
+    segments_with_marker = add_last_marker(segments_with_bar)
+    all_segments = update_dof_and_rangesQ(segments_with_marker, dof_and_rom)
 
 
 
 
-#header = extract_header(RAC + "female1_racine_main_armMerged.bioMod")
-header = ['version 4\n', '\n', 'gravity 0 0 -9.81\n']
 
-write_biomod(RAC + "Athlete_10_inverse.bioMod", segments_with_bar, header)
-print("écriture ok")
+    #header = extract_header(RAC + "female1_racine_main_armMerged.bioMod")
+    header = ['version 4\n', '\n', 'gravity 0 0 -9.81\n']
+    write_biomod(RAC + new_filename, all_segments, header)
+    print("écriture ok : ", new_filename)
