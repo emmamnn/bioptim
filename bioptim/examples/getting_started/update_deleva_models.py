@@ -70,8 +70,10 @@ def add_bar_segments(segments):
                 "\n",
                 "segment LowerBar\n",
                 "\trt 0 0 0 xyz 0 0 1.55\n",
+                "\tmesh 0 0 -1.55 \n"
                 "\tmesh 0 0 0 \n",
                 "\tmesh 0 2.4 0 \n",
+                "\tmesh 0 2.4 -1.55 \n",
                 "endsegment \n",
                 "\n",
                 "\tmarker LowerBarMarker\n",
@@ -85,8 +87,10 @@ def add_bar_segments(segments):
             "content": [
                 "segment UpperBarPosition\n",
                 "\trt 0 0 0 xyz 1.62 0 2.35 \n",
+                "\tmesh 0 0 -2.35\n",
                 "\tmesh 0 0 0\n",
                 "\tmesh 0 2.4 0\n",
+                "\tmesh 0 2.4 -2.35\n",
                 "endsegment \n",
                 "\n",
                 "\tmarker UpperBar\n",
@@ -123,7 +127,7 @@ def add_last_marker(segments, foot_length):
             "content": [
                 "\tmarker MarkerR\n",
                 "\t\tparent R_FOOT\n",
-                f"\t\tposition {foot_length} 0 0\n",
+                f"\t\tposition 0 0 -{foot_length}\n",
                 "\tendmarker\n",
                 "\n"
             ]
@@ -132,7 +136,7 @@ def add_last_marker(segments, foot_length):
             "content": [
                 "\tmarker MarkerL\n",
                 "\t\tparent L_FOOT\n",
-                f"\t\tposition {foot_length} 0 0\n",
+                f"\t\tposition 0 0 -{foot_length}\n",
                 "\tendmarker\n",
                 "\n"
             ]
@@ -200,6 +204,58 @@ def modify_hands_and_remove_root(segments):
 
     return updated_segments
 
+def modify_feet(segments):
+    """
+    Modify the feet segments to put the extended toe tips in the initial position
+    
+    Parameters
+    ----------
+    segments : list of dict
+        List of existing segments, each represented as a dictionary 
+        with keys "name" and "content"
+    
+    Returns
+    ----------
+    updated_segments : list of dict
+        A new list of segments where:
+        - In the segments named L_FOOT or R_FOOT:
+            * The COM is changed, the positive coordinate is on z instead of x
+            * The mesh is changed
+        - All other segments remain unchanged
+    """
+    
+    updated_segments = []
+
+    for seg in segments:
+        if seg["name"] == "L_FOOT" or seg["name"] == "R_FOOT":
+            new_content = []
+            for line in seg["content"]:
+                stripped = line.strip()
+
+                if stripped.startswith("CenterOfMass"):
+                    parts = stripped.split()  
+                    x = float(parts[1])
+                    y = float(parts[2])
+                    z = float(parts[3])
+                    new_content.append(f"\tCenterOfMass\t{z}\t{y}\t-{x}\n")
+                    
+                elif stripped.startswith("mesh"):
+                    parts = stripped.split()
+                    x = float(parts[1])
+                    y = float(parts[2])
+                    z = float(parts[3])
+                    if y > 0 :
+                        new_content.append(f"\tmesh\t{x}\t{z}\t-{y}\n")
+                    else :
+                       new_content.append(line) 
+                else:
+                    new_content.append(line)
+
+            updated_segments.append({"name": seg["name"], "content": new_content})
+        else:
+            updated_segments.append(seg)
+
+    return updated_segments
 
 def write_biomod(filepath, segments, header_lines=None):
     """
@@ -390,7 +446,7 @@ dof_and_rom = {
     "HANDS": {
         "translations" : ["xz"],
         "rotations": ["y"],
-        "rangesQ": [(-0.1, 0.1), (-0.1, 0.1), ("-2*pi", "2*pi")]
+        "rangesQ": [(-0.3, 0.3), (-0.3, 0.3), ("-2*pi", "2*pi")]
     },
     "UPPER_ARMS": {
         "rotations": ["y"],
@@ -406,15 +462,15 @@ dof_and_rom = {
     },
     "LOWER_TRUNK": {
         "rotations": ["y"],
-        "rangesQ": [("-pi/18", "5*pi/36")] #-10°, 25° 
+        "rangesQ": [("-pi/18", "pi/6")] #-10°, 30° 
     },
     "R_THIGH": {
         "rotations": ["xy"],
-        "rangesQ": [("-pi/3", 0), ("-pi/3", "pi/6")] #-60° 0°  | -60°, 30° 
+        "rangesQ": [("-2*pi/9", 0), ("-pi/3", "pi/6")] #-40° 0°  | -60°, 30° 
     },
      "L_THIGH": {
         "rotations": ["xy"],
-        "rangesQ": [(0, "pi/3"), ("-pi/3", "pi/6")] #0° 60° | -60°, 30°
+        "rangesQ": [(0, "2*pi/9"), ("-pi/3", "pi/6")] #0° 40° | -60°, 30°
     },
     "R_SHANK": {
         "rotations": ["y"],
@@ -426,11 +482,11 @@ dof_and_rom = {
     },
     "L_FOOT": {
         "rotations": ["y"],
-        "rangesQ": [("-7*pi/18", 0)] 
+        "rangesQ": [("-pi/2", 0)] 
     },
     "R_FOOT": {
         "rotations": ["y"],
-        "rangesQ": [("-7*pi/18", 0)] 
+        "rangesQ": [("-pi/2", 0)] 
     },
 }
 
@@ -444,12 +500,15 @@ df["FootLength"] = df["FootLengthCoeff"] * df["Height"]
 
 
 for num in range(1,len(df.index)+1):
+# a = [2]
+# for num in a :
     filename = f"athlete_{num}_deleva.bioMod"
     segments = parse_biomod(RAC + filename)
     segments = rotate_upper_trunk(segments)
     segments_with_bar = add_bar_segments(segments)
     segments_bis = modify_hands_and_remove_root(segments_with_bar)
-    segments_with_marker = add_last_marker(segments_bis,df["FootLength"][num-1])
+    segments_ter = modify_feet(segments_bis)
+    segments_with_marker = add_last_marker(segments_ter,df["FootLength"][num-1])
     all_segments = update_dof_and_rangesQ(segments_with_marker, dof_and_rom)
 
     header = ['version 4\n', '\n', 'gravity 0 0 -9.81\n']
