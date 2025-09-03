@@ -118,6 +118,7 @@ def prepare_ocp(
         max_time: float,
         total_mass: float,
         init_sol: bool,
+        final_state_bound: bool,
         coef_fig : int,
         weight_control: float,
         weight_time: float = 1,
@@ -150,6 +151,8 @@ def prepare_ocp(
         The mass of the athlete
     init_sol : bool
         If it computes an initial solution
+    final_state_bound : bool
+        If the final state is with bound (false means it's with constraints)
     coef_fig : int
         Weighting coefficient for objectives that implement FIG code specifications
     weight_control: float
@@ -310,12 +313,19 @@ def prepare_ocp(
     x_bounds[0]["q"][idx_RyHands, 0] = -2*np.pi/45 # hands tilted by 8° at the start
     x_bounds[0]["q"][1, 0] = - total_mass*9.81 / stiffness # equilibrium position
     x_bounds[0]["qdot"][:, 0] = 0  # speeds start at 0
-
     x_bounds[1]["q"][idx_RyHands, -1] = -np.pi # end of second phase with hands under the upper bar
 
-    x_bounds[2]["q"][:, -1] = 0
-    x_bounds[2]["q"][idx_RyHands, -1] = -2 * np.pi   # ends with hands 360° rotated
-    x_bounds[2]["qdot"][idx_RyHands, -1] = - np.pi  # ends with hands speed of pi rad/s
+    if final_state_bound :
+        x_bounds[2]["q"][:, -1] = 0
+        x_bounds[2]["q"][idx_RyHands, -1] = -2 * np.pi   # ends with hands 360° rotated
+        x_bounds[2]["qdot"][idx_RyHands, -1] = - np.pi  # ends with hands speed of pi rad/s
+    else : 
+        idx_final_state = np.arange(idx_RyHands+1, idx_FootL+1) # index to constraint to 0 in the final state (all except those of the hands)
+        constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", node=Node.END, index=idx_RyHands, min_bound=-2 * np.pi, max_bound=-2 * np.pi, phase=2)
+        constraint_list.add(ConstraintFcn.BOUND_STATE, key="q", node=Node.END, index=idx_final_state, min_bound=-0.1, max_bound=0.1, phase=2)
+        constraint_list.add(ConstraintFcn.BOUND_STATE, key="qdot", node=Node.END, index=idx_RyHands, min_bound=- np.pi-0.1, max_bound=- np.pi+0.1, phase=2)
+        
+    
 
     # Define control path bounds
     tau_min, tau_max = (-200, 200)
@@ -384,7 +394,7 @@ def main():
     masse = masses["total_mass"][num-1]
 
     # # initial solution
-    # ocp = prepare_ocp(biorbd_model_path=CURRENT_DIR + filename, final_time=(1, 0.5, 1), n_shooting=n_shooting, min_time=0.01, max_time=2, coef_fig=1, total_mass=masse, init_sol=True, weight_control=1, weight_time=0.1, n_threads=32, use_sx=False)
+    # ocp = prepare_ocp(biorbd_model_path=CURRENT_DIR + filename, final_time=(1, 0.5, 1), n_shooting=n_shooting, min_time=0.01, max_time=2, coef_fig=1, total_mass=masse, init_sol=True, weight_control=1, weight_time=0.1,final_state_bound=False, n_threads=32, use_sx=False)
     #
     # # --- Live plots --- #
     # ocp.add_plot_penalty(CostType.ALL)  # This will display the objectives and constraints at the current iteration
@@ -457,7 +467,7 @@ def main():
     # solution complete
     ocp = prepare_ocp(biorbd_model_path=CURRENT_DIR + filename, final_time=(1, 0.5, 1), n_shooting=n_shooting,
                       min_time=0.01, max_time=2, total_mass=masse, init_sol=False, weight_control=0.0001, weight_time=1,
-                      coef_fig=1, mode=mode, n_threads=32, use_sx=False)
+                      coef_fig=1,final_state_bound=False, mode=mode, n_threads=32, use_sx=False)
 
 
     # --- Live plots --- #
